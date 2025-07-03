@@ -150,6 +150,7 @@ services:
       - solr-net
     volumes:
       - ./:/app
+    command: ["python", "-m", "solr_mcp.server"]
 
 networks:
   solr-net:
