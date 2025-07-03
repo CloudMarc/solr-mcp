@@ -102,6 +102,11 @@ def process_markdown_file(file_path: str, output_file: str = None):
         file_path: Path to the markdown file
         output_file: Path to save the JSON output (if None, prints to stdout)
     """
+    # Ensure the output directory exists
+    output_dir = os.path.dirname(output_file)
+    if output_dir: # Only try to create if there's actually a directory path
+        os.makedirs(output_dir, exist_ok=True)
+
     # Read and parse markdown with frontmatter
     with open(file_path, 'r', encoding='utf-8') as f:
         post = frontmatter.load(f)
