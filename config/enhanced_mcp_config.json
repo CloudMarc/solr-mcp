@@ -1,0 +1,27 @@
+{
+  "solr": {
+    "base_url": "http://localhost:8983/solr",
+    "default_collection": "unified_docs",
+    "timeout": 30
+  },
+  "embedding": {
+    "model": "nomic-embed-text",
+    "ollama_url": "http://localhost:11434",
+    "dimension": 768
+  },
+  "indexing": {
+    "batch_size": 100,
+    "chunk_size": 1000,
+    "chunk_overlap": 200
+  },
+  "search": {
+    "default_rows": 10,
+    "max_rows": 100,
+    "similarity_threshold": 0.7
+  },
+  "server": {
+    "port": 8080,
+    "host": "0.0.0.0",
+    "debug": true
+  }
+}

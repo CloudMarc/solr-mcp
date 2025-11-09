@@ -63,7 +63,7 @@ services:
 
   # Initializer service to set up Solr collections (runs once and exits)
   solr-init:
-    image: solr:9.5
+    image: solr:9.9
     container_name: solr-init
     depends_on:
       solr1:
