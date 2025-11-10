@@ -11,13 +11,10 @@ from .common import MOCK_RESPONSES
 
 
 @pytest.fixture
-def mock_server(mock_solr_client, mock_config):
+def mock_server(mock_solr_client):
     """Create a mock SolrMCPServer for testing."""
-    server = SolrMCPServer(
-        solr_base_url=mock_config.solr_base_url,
-        zookeeper_hosts=mock_config.zookeeper_hosts,
-        connection_timeout=mock_config.connection_timeout,
-    )
+    # Create a completely mocked server to avoid any connection attempts
+    server = Mock(spec=SolrMCPServer)
     server.solr_client = mock_solr_client
     return server
 

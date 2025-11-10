@@ -478,3 +478,301 @@ def test_validate_sort_fields_error(field_manager):
             field_manager.validate_sort_fields(
                 "test_collection", ["sort_field", "title"]
             )
+
+
+# Tests for _get_collection_fields
+def test_get_collection_fields_cache_hit(field_manager):
+    """Test _get_collection_fields returns cached data when not stale."""
+    with patch.object(field_manager.cache, "is_stale", return_value=False):
+        with patch.object(field_manager.cache, "get", return_value={"cached": "data"}):
+            result = field_manager._get_collection_fields("test_collection")
+            assert result == {"cached": "data"}
+
+
+def test_get_collection_fields_cache_miss(field_manager):
+    """Test _get_collection_fields loads data when cache is stale."""
+    with patch.object(field_manager.cache, "is_stale", return_value=True):
+        with patch.object(
+            field_manager, "_get_searchable_fields", return_value=["field1", "field2"]
+        ):
+            with patch.object(
+                field_manager,
+                "_get_sortable_fields",
+                return_value={"field1": {"type": "string"}},
+            ):
+                with patch.object(field_manager.cache, "set") as mock_set:
+                    result = field_manager._get_collection_fields("test_collection")
+                    assert result["searchable_fields"] == ["field1", "field2"]
+                    assert result["sortable_fields"] == {"field1": {"type": "string"}}
+                    mock_set.assert_called_once()
+
+
+def test_get_collection_fields_error_fallback(field_manager):
+    """Test _get_collection_fields falls back to defaults on error."""
+    with patch.object(field_manager.cache, "is_stale", return_value=True):
+        with patch.object(
+            field_manager, "_get_searchable_fields", side_effect=Exception("Error")
+        ):
+            with patch.object(
+                field_manager.cache, "get_or_default", return_value={"default": "data"}
+            ):
+                result = field_manager._get_collection_fields("test_collection")
+                assert result == {"default": "data"}
+
+
+# Tests for _get_searchable_fields
+def test_get_searchable_fields_schema_api(field_manager):
+    """Test _get_searchable_fields with successful schema API call."""
+    mock_response = Mock()
+    mock_response.json.return_value = {
+        "fields": [
+            {"name": "field1", "type": "text_general"},
+            {"name": "field2", "type": "string"},
+            {"name": "_version_", "type": "plong"},
+        ]
+    }
+    with patch("requests.get", return_value=mock_response):
+        fields = field_manager._get_searchable_fields("test_collection")
+        assert "field1" in fields
+        assert "field2" in fields
+        assert "_version_" not in fields
+
+
+def test_get_searchable_fields_fallback_to_direct_url(field_manager):
+    """Test _get_searchable_fields falls back to direct URL on schema error."""
+    with patch("requests.get", side_effect=Exception("Schema error")):
+        # The method will fall back to default fields
+        fields = field_manager._get_searchable_fields("test_collection")
+        assert "content" in fields
+        assert "title" in fields
+        assert "_text_" in fields
+
+
+# Tests for _get_sortable_fields
+def test_get_sortable_fields_success(field_manager):
+    """Test _get_sortable_fields with successful schema API call."""
+    mock_response = Mock()
+    mock_response.json.return_value = {
+        "fields": [
+            {
+                "name": "field1",
+                "type": "string",
+                "multiValued": False,
+                "docValues": True,
+            },
+            {"name": "field2", "type": "plong", "multiValued": False, "docValues": True},
+            {
+                "name": "field3",
+                "type": "string",
+                "multiValued": True,
+                "docValues": True,
+            },  # Multi-valued, should be skipped
+        ]
+    }
+    with patch("requests.get", return_value=mock_response):
+        with patch("solr_mcp.solr.schema.fields.FIELD_TYPE_MAPPING", {"string": "string", "plong": "numeric"}):
+            fields = field_manager._get_sortable_fields("test_collection")
+            assert "field1" in fields
+            assert "field2" in fields
+            assert "field3" not in fields  # Multi-valued
+
+
+def test_get_sortable_fields_error_fallback(field_manager):
+    """Test _get_sortable_fields falls back to score field on error."""
+    with patch("requests.get", side_effect=Exception("Error")):
+        fields = field_manager._get_sortable_fields("test_collection")
+        assert "score" in fields
+
+
+# Tests for async methods
+@pytest.mark.asyncio
+async def test_list_fields_success(field_manager, mock_schema_response):
+    """Test list_fields returns fields with copy field information."""
+    schema_with_copy = mock_schema_response.copy()
+    schema_with_copy["schema"]["copyFields"] = [
+        {"source": "field1", "dest": "all_fields"},
+        {"source": "field2", "dest": "all_fields"},
+    ]
+    schema_with_copy["schema"]["fields"].append({"name": "all_fields", "type": "text_general"})
+    
+    with patch.object(field_manager, "get_schema", return_value=schema_with_copy["schema"]):
+        fields = await field_manager.list_fields("test_collection")
+        
+        # Find the all_fields field
+        all_fields_field = next((f for f in fields if f.get("name") == "all_fields"), None)
+        assert all_fields_field is not None
+        assert "copies_from" in all_fields_field
+        assert "field1" in all_fields_field["copies_from"]
+
+
+@pytest.mark.asyncio
+async def test_list_fields_error(field_manager):
+    """Test list_fields raises SchemaError on failure."""
+    with patch.object(field_manager, "get_schema", side_effect=Exception("Error")):
+        with pytest.raises(SchemaError, match="Failed to list fields"):
+            await field_manager.list_fields("test_collection")
+
+
+@pytest.mark.asyncio
+async def test_find_vector_field_success(field_manager):
+    """Test find_vector_field finds a vector field."""
+    mock_fields = [
+        {"name": "id", "type": "string"},
+        {"name": "vector_field", "type": "dense_vector"},
+    ]
+    
+    with patch.object(field_manager, "list_fields", return_value=mock_fields):
+        vector_field = await field_manager.find_vector_field("test_collection")
+        assert vector_field == "vector_field"
+
+
+@pytest.mark.asyncio
+async def test_find_vector_field_not_found(field_manager):
+    """Test find_vector_field raises SchemaError when no vector fields found."""
+    mock_fields = [
+        {"name": "id", "type": "string"},
+        {"name": "title", "type": "text_general"},
+    ]
+    
+    with patch.object(field_manager, "list_fields", return_value=mock_fields):
+        with pytest.raises(SchemaError, match="No vector fields found"):
+            await field_manager.find_vector_field("test_collection")
+
+
+@pytest.mark.asyncio
+async def test_validate_vector_field_dimension_success(field_manager):
+    """Test validate_vector_field_dimension with matching dimensions."""
+    mock_fields = [
+        {"name": "vector_field", "type": "dense_vector", "vectorDimension": 768},
+    ]
+    
+    with patch.object(field_manager, "list_fields", return_value=mock_fields):
+        field_info = await field_manager.validate_vector_field_dimension(
+            "test_collection",
+            "vector_field",
+            "test_model",
+            {"test_model": 768},
+        )
+        assert field_info["name"] == "vector_field"
+
+
+@pytest.mark.asyncio
+async def test_validate_vector_field_dimension_mismatch(field_manager):
+    """Test validate_vector_field_dimension raises SchemaError on dimension mismatch."""
+    mock_fields = [
+        {"name": "vector_field", "type": "dense_vector", "vectorDimension": 768},
+    ]
+    
+    with patch.object(field_manager, "list_fields", return_value=mock_fields):
+        with pytest.raises(SchemaError, match="Vector dimension mismatch"):
+            await field_manager.validate_vector_field_dimension(
+                "test_collection",
+                "vector_field",
+                "test_model",
+                {"test_model": 384},  # Different dimension
+            )
+
+
+@pytest.mark.asyncio
+async def test_validate_vector_field_not_found(field_manager):
+    """Test validate_vector_field_dimension raises SchemaError when field not found."""
+    mock_fields = [
+        {"name": "other_field", "type": "string"},
+    ]
+    
+    with patch.object(field_manager, "list_fields", return_value=mock_fields):
+        with pytest.raises(SchemaError, match="does not exist"):
+            await field_manager.validate_vector_field_dimension(
+                "test_collection",
+                "vector_field",
+            )
+
+
+@pytest.mark.asyncio
+async def test_validate_vector_field_not_vector_type(field_manager):
+    """Test validate_vector_field_dimension raises SchemaError when field is not a vector."""
+    mock_fields = [
+        {"name": "text_field", "type": "text_general"},
+    ]
+    
+    with patch.object(field_manager, "list_fields", return_value=mock_fields):
+        with pytest.raises(SchemaError, match="not a vector field"):
+            await field_manager.validate_vector_field_dimension(
+                "test_collection",
+                "text_field",
+            )
+
+
+@pytest.mark.asyncio
+async def test_validate_vector_field_dimension_from_schema(field_manager):
+    """Test validate_vector_field_dimension gets dimension from schema."""
+    mock_fields = [
+        {"name": "vector_field", "type": "custom_vector", "class": "solr.DenseVectorField"},
+    ]
+    
+    mock_schema_response = Mock()
+    mock_schema_response.json.return_value = {
+        "schema": {
+            "fieldTypes": [
+                {
+                    "name": "custom_vector",
+                    "class": "solr.DenseVectorField",
+                    "vectorDimension": 512,
+                }
+            ]
+        }
+    }
+    
+    with patch.object(field_manager, "list_fields", return_value=mock_fields):
+        with patch("requests.get", return_value=mock_schema_response):
+            field_info = await field_manager.validate_vector_field_dimension(
+                "test_collection",
+                "vector_field",
+            )
+            assert field_info["name"] == "vector_field"
+
+
+@pytest.mark.asyncio
+async def test_validate_vector_field_dimension_cached(field_manager):
+    """Test validate_vector_field_dimension uses cache."""
+    cache_key = "test_collection:vector_field"
+    field_manager._vector_field_cache[cache_key] = {
+        "name": "vector_field",
+        "type": "dense_vector",
+    }
+    
+    # Should not call list_fields since it's cached
+    field_info = await field_manager.validate_vector_field_dimension(
+        "test_collection",
+        "vector_field",
+    )
+    assert field_info["name"] == "vector_field"
+
+
+@pytest.mark.asyncio
+async def test_validate_vector_field_dimension_no_dimension_found(field_manager):
+    """Test validate_vector_field_dimension raises error when dimension cannot be determined."""
+    mock_fields = [
+        {"name": "vector_field", "type": "dense_vector"},  # No vectorDimension
+    ]
+    
+    mock_schema_response = Mock()
+    mock_schema_response.json.return_value = {
+        "schema": {
+            "fieldTypes": [
+                {
+                    "name": "dense_vector",
+                    "class": "solr.DenseVectorField",
+                    # No vectorDimension
+                }
+            ]
+        }
+    }
+    
+    with patch.object(field_manager, "list_fields", return_value=mock_fields):
+        with patch("requests.get", return_value=mock_schema_response):
+            with pytest.raises(SchemaError, match="Could not determine vector dimension"):
+                await field_manager.validate_vector_field_dimension(
+                    "test_collection",
+                    "vector_field",
+                )

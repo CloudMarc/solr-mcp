@@ -28,6 +28,22 @@ This optimization reduces computational overhead and network transfer by minimiz
 
 ## Quick Start
 
+### Using Makefile (Recommended)
+
+The easiest way to get started:
+
+```bash
+# Complete setup in one command
+make full-setup
+
+# Start the MCP server
+make server
+```
+
+See [MAKEFILE.md](MAKEFILE.md) for all available commands.
+
+### Manual Setup
+
 1. Clone this repository
 2. Start SolrCloud with Docker:
    ```bash

@@ -15,6 +15,9 @@ class TestSolrClient:
 
     def test_init_with_defaults(self, mock_config, mock_field_manager, mock_ollama):
         """Test initialization with default dependencies."""
+        # Set zookeeper_hosts to None to use HTTP provider instead
+        mock_config.zookeeper_hosts = None
+        
         client = SolrClient(
             config=mock_config,
             field_manager=mock_field_manager,
@@ -49,6 +52,9 @@ class TestSolrClient:
         self, mock_config, mock_field_manager, collection
     ):
         """Test successful SQL query execution with different collections."""
+        # Set zookeeper_hosts to None to use HTTP provider instead
+        mock_config.zookeeper_hosts = None
+        
         # Create a mock for the query builder
         mock_query_builder = Mock()
         mock_query_builder.parser = Mock()
