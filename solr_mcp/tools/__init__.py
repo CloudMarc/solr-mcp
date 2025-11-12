@@ -9,8 +9,14 @@ from .solr_default_vectorizer import get_default_text_vectorizer
 from .solr_delete_documents import execute_delete_documents
 from .solr_list_collections import execute_list_collections
 from .solr_list_fields import execute_list_fields
+from .solr_query import execute_query
+from .solr_schema_add_field import execute_schema_add_field
+from .solr_schema_delete_field import execute_schema_delete_field
+from .solr_schema_get_field import execute_schema_get_field
+from .solr_schema_list_fields import execute_schema_list_fields
 from .solr_select import execute_select_query
 from .solr_semantic_select import execute_semantic_select_query
+from .solr_terms import execute_terms
 from .solr_vector_select import execute_vector_select_query
 from .tool_decorator import get_schema, tool
 
@@ -20,6 +26,12 @@ __all__ = [
     "execute_select_query",
     "execute_vector_select_query",
     "execute_semantic_select_query",
+    "execute_query",
+    "execute_terms",
+    "execute_schema_add_field",
+    "execute_schema_list_fields",
+    "execute_schema_get_field",
+    "execute_schema_delete_field",
     "get_default_text_vectorizer",
     "execute_add_documents",
     "execute_delete_documents",

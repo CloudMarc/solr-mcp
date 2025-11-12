@@ -10,6 +10,10 @@ A Python package for accessing Apache Solr indexes via Model Context Protocol (M
 - **Unified Collections**: Store both document content and vector embeddings in the same collection
 - **Docker Integration**: Easy setup with Docker and docker-compose
 - **Optimized Vector Search**: Efficiently handles combined vector and SQL queries by pushing down SQL filters to the vector search stage, ensuring optimal performance even with large result sets and pagination
+- **Highlighting**: Show WHY documents matched with highlighted snippets of matched terms
+- **Stats Component**: Compute statistical aggregations (min, max, mean, sum, stddev) on numeric fields
+- **Terms Component**: Explore indexed terms for autocomplete, vocabulary exploration, and query expansion
+- **Schema API**: Dynamically add, list, get, and delete fields from collection schemas
 
 ## Architecture
 
@@ -68,6 +72,41 @@ See [MAKEFILE.md](MAKEFILE.md) for all available commands.
    ```
 
 For more detailed setup and usage instructions, see the [QUICKSTART.md](QUICKSTART.md) guide.
+
+## Available Tools
+
+### Query Tools
+
+- **solr_select**: Execute SQL queries against Solr collections
+- **solr_query**: Standard Solr queries with highlighting and stats support
+- **solr_vector_select**: SQL queries filtered by vector similarity
+- **solr_semantic_select**: SQL queries filtered by semantic similarity (text → vector)
+- **solr_terms**: Explore indexed terms with prefix/regex filtering
+
+### Schema Management
+
+- **solr_schema_add_field**: Add new fields to collection schemas
+- **solr_schema_list_fields**: List all fields in a schema
+- **solr_schema_get_field**: Get details of a specific field
+- **solr_schema_delete_field**: Remove fields from schemas
+
+### Collection Management
+
+- **solr_list_collections**: List all available Solr collections
+- **solr_list_fields**: List fields with copyField relationships
+
+### Indexing Tools
+
+- **solr_add_documents**: Add or update documents in a collection
+- **solr_delete_documents**: Delete documents by ID or query
+- **solr_commit**: Commit pending changes to a collection
+
+### Highlighting & Stats
+
+The `solr_query` tool supports:
+- **Highlighting**: Show matched terms in context with configurable snippet size and count
+- **Stats Component**: Compute min, max, mean, sum, stddev on numeric fields
+- Combine both features in a single query for rich search results
 
 ## Requirements
 

@@ -474,3 +474,385 @@ class SolrClient:
 
         except Exception as e:
             raise SolrError(f"Failed to commit: {str(e)}")
+
+    async def execute_query(
+        self,
+        collection: str,
+        q: str = "*:*",
+        fq: Optional[List[str]] = None,
+        fl: Optional[str] = None,
+        rows: int = 10,
+        start: int = 0,
+        sort: Optional[str] = None,
+        highlight_fields: Optional[List[str]] = None,
+        highlight_snippets: int = 3,
+        highlight_fragsize: int = 100,
+        highlight_method: str = "unified",
+        stats_fields: Optional[List[str]] = None,
+    ) -> Dict[str, Any]:
+        """Execute a standard Solr query with optional highlighting and stats.
+
+        Args:
+            collection: Collection to query
+            q: Main query string
+            fq: Filter queries
+            fl: Fields to return
+            rows: Number of rows to return
+            start: Offset for pagination
+            sort: Sort specification
+            highlight_fields: Fields to highlight
+            highlight_snippets: Number of snippets per field
+            highlight_fragsize: Size of each snippet
+            highlight_method: Highlighting method (unified, original, fastVector)
+            stats_fields: Fields to compute statistics for
+
+        Returns:
+            Query results with highlighting and stats if requested
+
+        Raises:
+            QueryError: If query fails
+        """
+        try:
+            import requests
+
+            # Build query URL
+            query_url = f"{self.base_url}/{collection}/select"
+
+            # Build query parameters
+            params = {
+                "q": q,
+                "rows": rows,
+                "start": start,
+                "wt": "json",
+            }
+
+            if fq:
+                params["fq"] = fq
+            if fl:
+                params["fl"] = fl
+            if sort:
+                params["sort"] = sort
+
+            # Add highlighting parameters
+            if highlight_fields:
+                params["hl"] = "true"
+                params["hl.fl"] = ",".join(highlight_fields)
+                params["hl.snippets"] = highlight_snippets
+                params["hl.fragsize"] = highlight_fragsize
+                params["hl.method"] = highlight_method
+
+            # Add stats parameters
+            if stats_fields:
+                params["stats"] = "true"
+                params["stats.field"] = stats_fields
+
+            # Execute query
+            response = requests.get(query_url, params=params)
+
+            if response.status_code != 200:
+                raise QueryError(
+                    f"Query failed with status {response.status_code}: {response.text}"
+                )
+
+            result = response.json()
+
+            # Format response
+            formatted_result = {
+                "num_found": result["response"]["numFound"],
+                "docs": result["response"]["docs"],
+                "start": result["response"].get("start", start),
+                "query_info": {
+                    "q": q,
+                    "rows": rows,
+                    "collection": collection,
+                },
+            }
+
+            # Add highlighting if present
+            if "highlighting" in result:
+                formatted_result["highlighting"] = result["highlighting"]
+
+            # Add stats if present
+            if "stats" in result:
+                formatted_result["stats"] = result["stats"]["stats_fields"]
+
+            return formatted_result
+
+        except QueryError:
+            raise
+        except Exception as e:
+            raise QueryError(f"Query execution failed: {str(e)}")
+
+    async def get_terms(
+        self,
+        collection: str,
+        field: str,
+        prefix: Optional[str] = None,
+        regex: Optional[str] = None,
+        limit: int = 10,
+        min_count: int = 1,
+        max_count: Optional[int] = None,
+    ) -> Dict[str, Any]:
+        """Get terms from a field using Solr's Terms Component.
+
+        Args:
+            collection: Collection to query
+            field: Field to get terms from
+            prefix: Filter terms by prefix
+            regex: Filter terms by regex
+            limit: Maximum number of terms
+            min_count: Minimum document frequency
+            max_count: Maximum document frequency
+
+        Returns:
+            Terms with their frequencies
+
+        Raises:
+            SolrError: If terms request fails
+        """
+        try:
+            import requests
+
+            # Build terms URL
+            terms_url = f"{self.base_url}/{collection}/terms"
+
+            # Build parameters
+            params = {
+                "terms.fl": field,
+                "terms.limit": limit,
+                "terms.mincount": min_count,
+                "wt": "json",
+            }
+
+            if prefix:
+                params["terms.prefix"] = prefix
+            if regex:
+                params["terms.regex"] = regex
+            if max_count is not None:
+                params["terms.maxcount"] = max_count
+
+            # Execute request
+            response = requests.get(terms_url, params=params)
+
+            if response.status_code != 200:
+                raise SolrError(
+                    f"Terms request failed with status {response.status_code}: {response.text}"
+                )
+
+            result = response.json()
+
+            # Parse terms response
+            # Solr returns terms as [term1, count1, term2, count2, ...]
+            terms_data = result.get("terms", {}).get(field, [])
+            terms_list = []
+
+            for i in range(0, len(terms_data), 2):
+                if i + 1 < len(terms_data):
+                    terms_list.append(
+                        {"term": terms_data[i], "frequency": terms_data[i + 1]}
+                    )
+
+            return {
+                "terms": terms_list,
+                "field": field,
+                "collection": collection,
+                "total_terms": len(terms_list),
+            }
+
+        except SolrError:
+            raise
+        except Exception as e:
+            raise SolrError(f"Failed to get terms: {str(e)}")
+
+    async def add_schema_field(
+        self,
+        collection: str,
+        field_name: str,
+        field_type: str,
+        stored: bool = True,
+        indexed: bool = True,
+        required: bool = False,
+        multiValued: bool = False,
+        docValues: Optional[bool] = None,
+    ) -> Dict[str, Any]:
+        """Add a field to the schema.
+
+        Args:
+            collection: Collection name
+            field_name: Name of the field
+            field_type: Solr field type
+            stored: Whether to store the field
+            indexed: Whether to index the field
+            required: Whether the field is required
+            multiValued: Whether the field can have multiple values
+            docValues: Whether to enable docValues
+
+        Returns:
+            Schema modification response
+
+        Raises:
+            SolrError: If schema modification fails
+        """
+        try:
+            import requests
+
+            # Build schema URL
+            schema_url = f"{self.base_url}/{collection}/schema"
+
+            # Build field definition
+            field_def = {
+                "name": field_name,
+                "type": field_type,
+                "stored": stored,
+                "indexed": indexed,
+                "required": required,
+                "multiValued": multiValued,
+            }
+
+            if docValues is not None:
+                field_def["docValues"] = docValues
+
+            # Send request
+            payload = {"add-field": field_def}
+
+            response = requests.post(
+                schema_url, json=payload, headers={"Content-Type": "application/json"}
+            )
+
+            if response.status_code not in [200, 201]:
+                raise SolrError(
+                    f"Schema modification failed with status {response.status_code}: {response.text}"
+                )
+
+            return {
+                "status": "success",
+                "field": field_def,
+                "collection": collection,
+            }
+
+        except SolrError:
+            raise
+        except Exception as e:
+            raise SolrError(f"Failed to add field: {str(e)}")
+
+    async def get_schema_fields(self, collection: str) -> Dict[str, Any]:
+        """Get all fields from the schema.
+
+        Args:
+            collection: Collection name
+
+        Returns:
+            Schema fields information
+
+        Raises:
+            SolrError: If schema retrieval fails
+        """
+        try:
+            import requests
+
+            # Build schema URL
+            schema_url = f"{self.base_url}/{collection}/schema/fields"
+
+            response = requests.get(schema_url, params={"wt": "json"})
+
+            if response.status_code != 200:
+                raise SolrError(
+                    f"Schema retrieval failed with status {response.status_code}: {response.text}"
+                )
+
+            result = response.json()
+
+            return {
+                "fields": result.get("fields", []),
+                "collection": collection,
+                "total_fields": len(result.get("fields", [])),
+            }
+
+        except SolrError:
+            raise
+        except Exception as e:
+            raise SolrError(f"Failed to get schema fields: {str(e)}")
+
+    async def get_schema_field(
+        self, collection: str, field_name: str
+    ) -> Dict[str, Any]:
+        """Get a specific field from the schema.
+
+        Args:
+            collection: Collection name
+            field_name: Field name
+
+        Returns:
+            Field information
+
+        Raises:
+            SolrError: If field retrieval fails
+        """
+        try:
+            import requests
+
+            # Build schema URL
+            schema_url = f"{self.base_url}/{collection}/schema/fields/{field_name}"
+
+            response = requests.get(schema_url, params={"wt": "json"})
+
+            if response.status_code != 200:
+                raise SolrError(
+                    f"Field retrieval failed with status {response.status_code}: {response.text}"
+                )
+
+            result = response.json()
+
+            return {
+                "field": result.get("field", {}),
+                "collection": collection,
+            }
+
+        except SolrError:
+            raise
+        except Exception as e:
+            raise SolrError(f"Failed to get field: {str(e)}")
+
+    async def delete_schema_field(
+        self, collection: str, field_name: str
+    ) -> Dict[str, Any]:
+        """Delete a field from the schema.
+
+        Args:
+            collection: Collection name
+            field_name: Field name
+
+        Returns:
+            Schema modification response
+
+        Raises:
+            SolrError: If schema modification fails
+        """
+        try:
+            import requests
+
+            # Build schema URL
+            schema_url = f"{self.base_url}/{collection}/schema"
+
+            # Send request
+            payload = {"delete-field": {"name": field_name}}
+
+            response = requests.post(
+                schema_url, json=payload, headers={"Content-Type": "application/json"}
+            )
+
+            if response.status_code not in [200, 201]:
+                raise SolrError(
+                    f"Schema modification failed with status {response.status_code}: {response.text}"
+                )
+
+            return {
+                "status": "success",
+                "field_name": field_name,
+                "collection": collection,
+            }
+
+        except SolrError:
+            raise
+        except Exception as e:
+            raise SolrError(f"Failed to delete field: {str(e)}")
