@@ -4,6 +4,9 @@ import pytest
 
 from solr_mcp.tools import (
     TOOLS_DEFINITION,
+    execute_add_documents,
+    execute_commit,
+    execute_delete_documents,
     execute_list_collections,
     execute_list_fields,
     execute_select_query,
@@ -23,6 +26,9 @@ def test_tools_definition():
         "solr_vector_select": execute_vector_select_query,
         "solr_semantic_select": execute_semantic_select_query,
         "get_default_text_vectorizer": get_default_text_vectorizer,
+        "solr_add_documents": execute_add_documents,
+        "solr_delete_documents": execute_delete_documents,
+        "solr_commit": execute_commit,
     }
 
     assert len(TOOLS_DEFINITION) == len(tools)
@@ -42,6 +48,9 @@ def test_tools_exports():
         "execute_vector_select_query",
         "execute_semantic_select_query",
         "get_default_text_vectorizer",
+        "execute_add_documents",
+        "execute_delete_documents",
+        "execute_commit",
     }
 
     assert set(__all__) == expected

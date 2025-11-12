@@ -14,6 +14,7 @@ from solr_mcp.solr.config import SolrConfig
 from solr_mcp.solr.exceptions import (
     ConnectionError,
     DocValuesError,
+    IndexingError,
     QueryError,
     SolrError,
     SQLExecutionError,
@@ -319,3 +320,157 @@ class SolrClient:
             if isinstance(e, (QueryError, SolrError)):
                 raise
             raise SolrError(f"Semantic search failed: {str(e)}")
+
+    async def add_documents(
+        self,
+        collection: str,
+        documents: List[Dict[str, Any]],
+        commit: bool = True,
+        commit_within: Optional[int] = None,
+        overwrite: bool = True,
+    ) -> Dict[str, Any]:
+        """Add or update documents in a Solr collection.
+
+        Args:
+            collection: The collection to add documents to
+            documents: List of documents to add (each document is a dict)
+            commit: Whether to commit immediately (default: True)
+            commit_within: Commit within N milliseconds (alternative to commit)
+            overwrite: Whether to overwrite existing documents with same ID (default: True)
+
+        Returns:
+            Response from Solr containing status information
+
+        Raises:
+            IndexingError: If indexing fails
+            SolrError: If collection doesn't exist or other errors occur
+        """
+        try:
+            if not documents:
+                raise IndexingError("No documents provided")
+
+            # Validate collection exists
+            collections = await self.list_collections()
+            if collection not in collections:
+                raise SolrError(f"Collection '{collection}' does not exist")
+
+            # Get or create client for this collection
+            client = await self._get_or_create_client(collection)
+
+            # Add documents using pysolr
+            # pysolr.Solr.add is synchronous, but we're in async context
+            # We'll use it directly since it's a quick operation
+            client.add(
+                documents,
+                commit=commit,
+                commitWithin=commit_within,
+                overwrite=overwrite,
+            )
+
+            return {
+                "status": "success",
+                "collection": collection,
+                "num_documents": len(documents),
+                "committed": commit,
+                "commit_within": commit_within,
+            }
+
+        except IndexingError:
+            raise
+        except SolrError:
+            raise
+        except Exception as e:
+            raise IndexingError(f"Failed to add documents: {str(e)}")
+
+    async def delete_documents(
+        self,
+        collection: str,
+        ids: Optional[List[str]] = None,
+        query: Optional[str] = None,
+        commit: bool = True,
+    ) -> Dict[str, Any]:
+        """Delete documents from a Solr collection.
+
+        Args:
+            collection: The collection to delete from
+            ids: List of document IDs to delete (mutually exclusive with query)
+            query: Solr query to match documents to delete (mutually exclusive with ids)
+            commit: Whether to commit immediately (default: True)
+
+        Returns:
+            Response from Solr containing status information
+
+        Raises:
+            IndexingError: If deletion fails or invalid parameters
+            SolrError: If collection doesn't exist or other errors occur
+        """
+        try:
+            # Validate parameters
+            if ids and query:
+                raise IndexingError("Cannot specify both 'ids' and 'query'")
+            if not ids and not query:
+                raise IndexingError("Must specify either 'ids' or 'query'")
+
+            # Validate collection exists
+            collections = await self.list_collections()
+            if collection not in collections:
+                raise SolrError(f"Collection '{collection}' does not exist")
+
+            # Get or create client for this collection
+            client = await self._get_or_create_client(collection)
+
+            # Delete documents
+            if ids:
+                client.delete(id=ids, commit=commit)
+                num_affected = len(ids)
+            else:
+                client.delete(q=query, commit=commit)
+                num_affected = "unknown (query-based)"
+
+            return {
+                "status": "success",
+                "collection": collection,
+                "num_affected": num_affected,
+                "committed": commit,
+                "delete_by": "id" if ids else "query",
+            }
+
+        except IndexingError:
+            raise
+        except SolrError:
+            raise
+        except Exception as e:
+            raise IndexingError(f"Failed to delete documents: {str(e)}")
+
+    async def commit(self, collection: str) -> Dict[str, Any]:
+        """Commit pending changes to a Solr collection.
+
+        Args:
+            collection: The collection to commit
+
+        Returns:
+            Response from Solr containing status information
+
+        Raises:
+            SolrError: If commit fails
+        """
+        try:
+            # Validate collection exists
+            collections = await self.list_collections()
+            if collection not in collections:
+                raise SolrError(f"Collection '{collection}' does not exist")
+
+            # Get or create client for this collection
+            client = await self._get_or_create_client(collection)
+
+            # Commit
+            client.commit()
+
+            return {
+                "status": "success",
+                "collection": collection,
+                "committed": True,
+            }
+
+        except Exception as e:
+            raise SolrError(f"Failed to commit: {str(e)}")

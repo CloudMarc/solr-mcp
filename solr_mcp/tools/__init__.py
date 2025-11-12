@@ -3,7 +3,10 @@
 import inspect
 import sys
 
+from .solr_add_documents import execute_add_documents
+from .solr_commit import execute_commit
 from .solr_default_vectorizer import get_default_text_vectorizer
+from .solr_delete_documents import execute_delete_documents
 from .solr_list_collections import execute_list_collections
 from .solr_list_fields import execute_list_fields
 from .solr_select import execute_select_query
@@ -18,6 +21,9 @@ __all__ = [
     "execute_vector_select_query",
     "execute_semantic_select_query",
     "get_default_text_vectorizer",
+    "execute_add_documents",
+    "execute_delete_documents",
+    "execute_commit",
 ]
 
 TOOLS_DEFINITION = [

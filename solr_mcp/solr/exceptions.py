@@ -119,3 +119,9 @@ class SchemaNotFoundError(SchemaError):
         super().__init__(
             message=message, error_type="SCHEMA_NOT_FOUND", collection=collection
         )
+
+
+class IndexingError(SolrError):
+    """Exception raised for indexing-related errors."""
+
+    pass
