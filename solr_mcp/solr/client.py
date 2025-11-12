@@ -4,7 +4,6 @@ import logging
 from typing import Any
 
 import pysolr
-from loguru import logger
 
 from solr_mcp.solr.collections import (
     HttpCollectionProvider,
@@ -92,7 +91,7 @@ class SolrClient:
         # Initialize vector manager with default top_k of 10
         self.vector_manager = VectorManager(
             self,
-            self.vector_provider,
+            self.vector_provider,  # type: ignore[arg-type]
             10,  # Default value for top_k
         )
 
@@ -426,7 +425,7 @@ class SolrClient:
                 num_affected = len(ids)
             else:
                 client.delete(q=query, commit=commit)
-                num_affected = "unknown (query-based)"
+                num_affected = "unknown (query-based)"  # type: ignore[assignment]
 
             return {
                 "status": "success",
@@ -578,7 +577,7 @@ class SolrClient:
                 params["stats.field"] = stats_fields
 
             # Execute query
-            response = requests.get(query_url, params=params)
+            response = requests.get(query_url, params=params)  # type: ignore[arg-type]
 
             if response.status_code != 200:
                 raise QueryError(
@@ -663,7 +662,7 @@ class SolrClient:
                 params["terms.maxcount"] = max_count
 
             # Execute request
-            response = requests.get(terms_url, params=params)
+            response = requests.get(terms_url, params=params)  # type: ignore[arg-type]
 
             if response.status_code != 200:
                 raise SolrError(
@@ -930,11 +929,11 @@ class SolrClient:
 
             # Add version for optimistic concurrency if provided
             if version is not None:
-                doc["_version_"] = version
+                doc["_version_"] = version  # type: ignore[assignment]
 
             # Add atomic update operations
             for field, operation in updates.items():
-                doc[field] = operation
+                doc[field] = operation  # type: ignore[assignment]
 
             # Build request
             payload = [doc]

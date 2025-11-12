@@ -60,7 +60,7 @@ class ZooKeeperCollectionProvider(CollectionProvider):
             if not self.zk:
                 raise ConnectionError("Not connected to ZooKeeper")
 
-            collections = await anyio.to_thread.run_sync(
+            collections = await anyio.to_thread.run_sync(  # type: ignore[unreachable]
                 self.zk.get_children, "/collections"
             )
             return collections
@@ -90,7 +90,7 @@ class ZooKeeperCollectionProvider(CollectionProvider):
 
             # Check for collection in ZooKeeper
             collection_path = f"/collections/{collection}"
-            exists = await anyio.to_thread.run_sync(self.zk.exists, collection_path)
+            exists = await anyio.to_thread.run_sync(self.zk.exists, collection_path)  # type: ignore[unreachable]
             return exists is not None
 
         except ConnectionLoss as e:

@@ -214,7 +214,7 @@ class SolrUtils:
             if isinstance(value, dict):
                 sanitized[key] = SolrUtils.sanitize_facets(value)
             elif isinstance(value, (list, tuple)):
-                sanitized[key] = [
+                sanitized[key] = [  # type: ignore[assignment]
                     SolrUtils.ensure_json_object(v) if isinstance(v, str) else v
                     for v in value
                 ]

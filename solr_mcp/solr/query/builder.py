@@ -3,7 +3,6 @@
 import logging
 from typing import Any
 
-from loguru import logger
 from sqlglot import exp
 from sqlglot.expressions import (
     EQ,

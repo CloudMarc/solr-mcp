@@ -4,8 +4,6 @@ import logging
 import time
 from typing import Any
 
-from loguru import logger
-
 from solr_mcp.solr.constants import SYNTHETIC_SORT_FIELDS
 
 

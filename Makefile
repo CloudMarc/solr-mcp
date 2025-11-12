@@ -60,7 +60,9 @@ test-unit: install ## Run unit tests only (fast, no coverage)
 	uv run env PYTHONPATH=. pytest tests/unit -v
 
 # Run unit tests with coverage
-test: install ## Run unit tests with coverage
+test: install ## Run unit tests with coverage and type checking
+	@echo "$(GREEN)--- 🔍 Type checking with mypy ---$(NC)"
+	uv run mypy solr_mcp/
 	@echo "$(GREEN)--- 🧪 Running tests with coverage ---$(NC)"
 	uv run env PYTHONPATH=. pytest tests/unit --cov=solr_mcp --cov-report=term-missing --cov-fail-under=$(COVERAGE_MIN)
 

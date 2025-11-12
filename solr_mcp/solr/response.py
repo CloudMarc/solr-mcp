@@ -4,7 +4,6 @@ import logging
 from typing import Any
 
 import pysolr
-from loguru import logger
 
 from solr_mcp.solr.utils.formatting import format_search_results, format_sql_response
 
@@ -28,7 +27,7 @@ class ResponseFormatter:
         Returns:
             Formatted search results
         """
-        return format_search_results(results, start)
+        return format_search_results(results, start)  # type: ignore[return-value]
 
     @staticmethod
     def format_sql_response(response: dict[str, Any]) -> dict[str, Any]:

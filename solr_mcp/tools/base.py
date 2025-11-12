@@ -27,12 +27,12 @@ def tool(
             return result
 
         # Mark as tool
-        wrapper._is_tool = True
+        wrapper._is_tool = True  # type: ignore[attr-defined]
 
         # Set tool metadata
-        wrapper._tool_name = name or func.__name__
-        wrapper._tool_description = description or func.__doc__ or ""
-        wrapper._tool_parameters = parameters or {}
+        wrapper._tool_name = name or func.__name__  # type: ignore[attr-defined]
+        wrapper._tool_description = description or func.__doc__ or ""  # type: ignore[attr-defined]
+        wrapper._tool_parameters = parameters or {}  # type: ignore[attr-defined]
 
         return wrapper
 

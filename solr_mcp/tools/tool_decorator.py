@@ -46,7 +46,7 @@ def tool() -> Callable:
                 raise
 
         # Set tool metadata
-        wrapper._is_tool = True
+        wrapper._is_tool = True  # type: ignore[attr-defined]
 
         # Convert execute_list_collections -> solr_list_collections
         # Convert execute_select_query -> solr_select
@@ -59,7 +59,7 @@ def tool() -> Callable:
                 name = name[:-6]  # Remove '_query'
             name = f"solr_{name}"
 
-        wrapper._tool_name = name
+        wrapper._tool_name = name  # type: ignore[attr-defined]
 
         return wrapper
 
@@ -141,7 +141,7 @@ def get_schema(func: Callable) -> ToolSchema:
                     literal_args = get_args(non_none_type)
                     param_schema = {"type": "string", "enum": list(literal_args)}
                 else:
-                    param_schema = type_map.get(non_none_type, {"type": "string"})
+                    param_schema = type_map.get(non_none_type, {"type": "string"})  # type: ignore[assignment]
             else:
                 param_schema = {"type": "string"}
         elif origin is Literal:
@@ -149,7 +149,7 @@ def get_schema(func: Callable) -> ToolSchema:
             literal_args = args
             param_schema = {"type": "string", "enum": list(literal_args)}
         else:
-            param_schema = type_map.get(param_type, {"type": "string"})
+            param_schema = type_map.get(param_type, {"type": "string"})  # type: ignore[assignment]
 
         # docstring에서 Args 섹션 파싱
         param_description_lines = []
@@ -209,4 +209,4 @@ def get_schema(func: Callable) -> ToolSchema:
             "required": required,
         },
     }
-    return schema
+    return schema  # type: ignore[return-value]

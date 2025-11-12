@@ -4,7 +4,6 @@ import logging
 from typing import Any
 
 import requests
-from loguru import logger
 from requests.exceptions import HTTPError
 
 from solr_mcp.solr.constants import FIELD_TYPE_MAPPING, SYNTHETIC_SORT_FIELDS
@@ -29,9 +28,9 @@ class FieldManager:
             if isinstance(solr_base_url, str)
             else solr_base_url.config.solr_base_url.rstrip("/")
         )
-        self._schema_cache = {}
-        self._field_types_cache = {}
-        self._vector_field_cache = {}
+        self._schema_cache: dict[str, Any] = {}
+        self._field_types_cache: dict[str, Any] = {}
+        self._vector_field_cache: dict[str, Any] = {}
         self.cache = FieldCache()
 
     def get_schema(self, collection: str) -> dict:
@@ -275,7 +274,7 @@ class FieldManager:
         """
         # Check cache first
         if not self.cache.is_stale(collection):
-            return self.cache.get(collection)
+            return self.cache.get(collection)  # type: ignore[return-value]
 
         try:
             searchable_fields = self._get_searchable_fields(collection)
@@ -539,7 +538,7 @@ class FieldManager:
             copy_fields = schema.get("copyFields", [])
 
             # Build map of destination fields to their source fields
-            copies_from = {}
+            copies_from: dict[str, list[str]] = {}
             for copy_field in copy_fields:
                 dest = copy_field.get("dest")
                 source = copy_field.get("source")

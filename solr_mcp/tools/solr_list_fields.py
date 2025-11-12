@@ -35,6 +35,6 @@ async def execute_list_fields(mcp: str, collection: str) -> dict[str, Any]:
             - copies_from: List of source fields that copy their content to this field
         - collection: Name of the collection queried
     """
-    fields = await mcp.solr_client.list_fields(collection)
+    fields = await mcp.solr_client.list_fields(collection)  # type: ignore[attr-defined]
 
     return {"fields": fields, "collection": collection}

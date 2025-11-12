@@ -6,7 +6,6 @@ from typing import Any
 
 import aiohttp
 import requests
-from loguru import logger
 
 from solr_mcp.solr.exceptions import (
     DocValuesError,

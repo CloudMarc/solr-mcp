@@ -85,6 +85,7 @@ class SchemaError(SolrError):
             error_type: Type of schema error
             collection: Collection name
         """
+        self.message = message
         self.error_type = error_type
         self.collection = collection
         super().__init__(message)
@@ -112,7 +113,7 @@ class CollectionNotFoundError(SchemaError):
 class SchemaNotFoundError(SchemaError):
     """Exception raised when a collection's schema cannot be retrieved."""
 
-    def __init__(self, collection: str, details: str = None):
+    def __init__(self, collection: str, details: str | None = None):
         message = f"Schema for collection '{collection}' could not be retrieved"
         if details:
             message += f": {details}"

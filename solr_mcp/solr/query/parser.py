@@ -2,7 +2,6 @@
 
 import logging
 
-from loguru import logger
 from sqlglot import ParseError, parse_one
 from sqlglot.expressions import (
     Alias,

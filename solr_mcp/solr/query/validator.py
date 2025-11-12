@@ -2,8 +2,6 @@
 
 import logging
 
-from loguru import logger
-
 from solr_mcp.solr.exceptions import QueryError
 
 

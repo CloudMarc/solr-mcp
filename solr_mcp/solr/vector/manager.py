@@ -4,7 +4,6 @@ import logging
 from typing import TYPE_CHECKING, Any
 
 import pysolr
-from loguru import logger
 
 from solr_mcp.solr.interfaces import VectorSearchProvider
 from solr_mcp.vector_provider import OllamaVectorProvider
@@ -78,10 +77,10 @@ class VectorManager(VectorSearchProvider):
                 from solr_mcp.vector_provider import OllamaVectorProvider
 
                 temp_client = OllamaVectorProvider(
-                    model=temp_config["model"],
-                    base_url=temp_config["base_url"],
-                    timeout=temp_config["timeout"],
-                    retries=temp_config["retries"],
+                    model=temp_config["model"],  # type: ignore[arg-type]
+                    base_url=temp_config["base_url"],  # type: ignore[arg-type]
+                    timeout=temp_config["timeout"],  # type: ignore[arg-type]
+                    retries=temp_config["retries"],  # type: ignore[arg-type]
                 )
 
                 # Use temporary client to get vector
@@ -181,7 +180,7 @@ class VectorManager(VectorSearchProvider):
                 raise SolrError(str(e))
             raise SolrError(f"Failed to validate vector field: {str(e)}")
 
-    async def execute_vector_search(
+    async def execute_vector_search(  # type: ignore[override]
         self,
         client: pysolr.Solr,
         vector: list[float],
