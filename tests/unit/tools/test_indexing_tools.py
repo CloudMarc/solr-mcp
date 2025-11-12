@@ -214,6 +214,7 @@ class TestCommitTool:
             "status": "success",
             "collection": "test_collection",
             "committed": True,
+            "commit_type": "hard",
         }
 
         mock_mcp.solr_client.commit = AsyncMock(return_value=expected_result)
@@ -225,6 +226,9 @@ class TestCommitTool:
 
         mock_mcp.solr_client.commit.assert_called_once_with(
             collection="test_collection",
+            soft=False,
+            wait_searcher=True,
+            expunge_deletes=False,
         )
 
         assert result == expected_result

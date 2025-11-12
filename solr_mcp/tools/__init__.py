@@ -4,12 +4,14 @@ import inspect
 import sys
 
 from .solr_add_documents import execute_add_documents
+from .solr_atomic_update import execute_atomic_update
 from .solr_commit import execute_commit
 from .solr_default_vectorizer import get_default_text_vectorizer
 from .solr_delete_documents import execute_delete_documents
 from .solr_list_collections import execute_list_collections
 from .solr_list_fields import execute_list_fields
 from .solr_query import execute_query
+from .solr_realtime_get import execute_realtime_get
 from .solr_schema_add_field import execute_schema_add_field
 from .solr_schema_delete_field import execute_schema_delete_field
 from .solr_schema_get_field import execute_schema_get_field
@@ -28,6 +30,8 @@ __all__ = [
     "execute_semantic_select_query",
     "execute_query",
     "execute_terms",
+    "execute_atomic_update",
+    "execute_realtime_get",
     "execute_schema_add_field",
     "execute_schema_list_fields",
     "execute_schema_get_field",

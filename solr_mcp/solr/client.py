@@ -442,11 +442,21 @@ class SolrClient:
         except Exception as e:
             raise IndexingError(f"Failed to delete documents: {str(e)}")
 
-    async def commit(self, collection: str) -> Dict[str, Any]:
+    async def commit(
+        self,
+        collection: str,
+        soft: bool = False,
+        wait_searcher: bool = True,
+        expunge_deletes: bool = False,
+    ) -> Dict[str, Any]:
         """Commit pending changes to a Solr collection.
 
         Args:
             collection: The collection to commit
+            soft: If True, soft commit (visible but not durable)
+                  If False, hard commit (durable to disk)
+            wait_searcher: Wait for new searcher to open
+            expunge_deletes: Merge away deleted documents
 
         Returns:
             Response from Solr containing status information
@@ -455,23 +465,43 @@ class SolrClient:
             SolrError: If commit fails
         """
         try:
+            import requests
+
             # Validate collection exists
             collections = await self.list_collections()
             if collection not in collections:
                 raise SolrError(f"Collection '{collection}' does not exist")
 
-            # Get or create client for this collection
-            client = await self._get_or_create_client(collection)
+            # Build commit URL
+            commit_url = f"{self.base_url}/{collection}/update"
 
-            # Commit
-            client.commit()
+            # Build commit parameters
+            params = {"wt": "json"}
+
+            if soft:
+                params["softCommit"] = "true"
+            else:
+                params["commit"] = "true"
+                params["waitSearcher"] = "true" if wait_searcher else "false"
+                params["expungeDeletes"] = "true" if expunge_deletes else "false"
+
+            # Execute commit
+            response = requests.post(commit_url, params=params)
+
+            if response.status_code != 200:
+                raise SolrError(
+                    f"Commit failed with status {response.status_code}: {response.text}"
+                )
 
             return {
                 "status": "success",
                 "collection": collection,
+                "commit_type": "soft" if soft else "hard",
                 "committed": True,
             }
 
+        except SolrError:
+            raise
         except Exception as e:
             raise SolrError(f"Failed to commit: {str(e)}")
 
@@ -856,3 +886,175 @@ class SolrClient:
             raise
         except Exception as e:
             raise SolrError(f"Failed to delete field: {str(e)}")
+
+    async def atomic_update(
+        self,
+        collection: str,
+        doc_id: str,
+        updates: Dict[str, Dict[str, Any]],
+        version: Optional[int] = None,
+        commit: bool = False,
+        commitWithin: Optional[int] = None,
+    ) -> Dict[str, Any]:
+        """Atomically update specific fields in a document.
+
+        Args:
+            collection: Collection name
+            doc_id: Document ID to update
+            updates: Field updates as {field: {operation: value}}
+            version: Optional version for optimistic concurrency
+            commit: Whether to commit immediately
+            commitWithin: Milliseconds to auto-commit
+
+        Returns:
+            Update response
+
+        Raises:
+            SolrError: If update fails
+            IndexingError: If document not found or version mismatch
+        """
+        try:
+            import requests
+
+            # Validate collection exists
+            collections = await self.list_collections()
+            if collection not in collections:
+                raise SolrError(f"Collection '{collection}' does not exist")
+
+            # Build update URL
+            update_url = f"{self.base_url}/{collection}/update"
+
+            # Build document with atomic updates
+            doc = {"id": doc_id}
+
+            # Add version for optimistic concurrency if provided
+            if version is not None:
+                doc["_version_"] = version
+
+            # Add atomic update operations
+            for field, operation in updates.items():
+                doc[field] = operation
+
+            # Build request
+            payload = [doc]
+            params = {"wt": "json"}
+
+            if commit:
+                params["commit"] = "true"
+            elif commitWithin is not None:
+                params["commitWithin"] = str(commitWithin)
+
+            # Execute update
+            response = requests.post(
+                update_url,
+                json=payload,
+                params=params,
+                headers={"Content-Type": "application/json"},
+            )
+
+            if response.status_code != 200:
+                error_text = response.text
+                # Check for version conflict
+                if "version conflict" in error_text.lower():
+                    raise IndexingError(
+                        f"Version conflict: Document has been modified. "
+                        f"Expected version {version} but document has different version."
+                    )
+                raise SolrError(
+                    f"Atomic update failed with status {response.status_code}: {error_text}"
+                )
+
+            result = response.json()
+
+            # Extract new version if available
+            new_version = None
+            if "responseHeader" in result and "rf" in result:
+                # Version might be in the response
+                new_version = result.get("_version_")
+
+            return {
+                "status": "success",
+                "doc_id": doc_id,
+                "collection": collection,
+                "version": new_version,
+                "updates_applied": len(updates),
+            }
+
+        except (SolrError, IndexingError):
+            raise
+        except Exception as e:
+            raise SolrError(f"Failed to perform atomic update: {str(e)}")
+
+    async def realtime_get(
+        self,
+        collection: str,
+        doc_ids: List[str],
+        fl: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        """Get documents in real-time, including uncommitted changes.
+
+        Args:
+            collection: Collection name
+            doc_ids: List of document IDs
+            fl: Optional comma-separated list of fields
+
+        Returns:
+            Retrieved documents
+
+        Raises:
+            SolrError: If get fails
+        """
+        try:
+            import requests
+
+            # Validate collection exists
+            collections = await self.list_collections()
+            if collection not in collections:
+                raise SolrError(f"Collection '{collection}' does not exist")
+
+            # Build RTG URL
+            rtg_url = f"{self.base_url}/{collection}/get"
+
+            # Build parameters
+            params = {"wt": "json"}
+
+            # Add IDs
+            if len(doc_ids) == 1:
+                params["id"] = doc_ids[0]
+            else:
+                params["ids"] = ",".join(doc_ids)
+
+            # Add field list if specified
+            if fl:
+                params["fl"] = fl
+
+            # Execute request
+            response = requests.get(rtg_url, params=params)
+
+            if response.status_code != 200:
+                raise SolrError(
+                    f"Real-time get failed with status {response.status_code}: {response.text}"
+                )
+
+            result = response.json()
+
+            # Handle single vs multiple docs
+            if "doc" in result:
+                # Single document
+                docs = [result["doc"]] if result["doc"] is not None else []
+            elif "response" in result:
+                # Multiple documents
+                docs = result["response"].get("docs", [])
+            else:
+                docs = []
+
+            return {
+                "docs": docs,
+                "num_found": len(docs),
+                "collection": collection,
+            }
+
+        except SolrError:
+            raise
+        except Exception as e:
+            raise SolrError(f"Failed to get documents: {str(e)}")

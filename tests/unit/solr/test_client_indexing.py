@@ -286,15 +286,27 @@ class TestCommit:
     """Tests for commit method."""
 
     @pytest.mark.asyncio
-    async def test_commit_success(self, solr_client, mock_pysolr_client):
+    async def test_commit_success(self, solr_client):
         """Test successfully committing changes."""
-        result = await solr_client.commit(collection="test_collection")
+        # Mock requests.post since commit() uses requests directly
+        with patch("requests.post") as mock_post:
+            mock_response = MagicMock()
+            mock_response.status_code = 200
+            mock_response.json.return_value = {"responseHeader": {"status": 0}}
+            mock_post.return_value = mock_response
 
-        mock_pysolr_client.commit.assert_called_once()
+            result = await solr_client.commit(collection="test_collection")
 
-        assert result["status"] == "success"
-        assert result["collection"] == "test_collection"
-        assert result["committed"] is True
+            # Verify requests.post was called correctly
+            mock_post.assert_called_once()
+            call_args = mock_post.call_args
+            assert "test_collection/update" in call_args[0][0]
+            assert call_args[1]["params"]["commit"] == "true"
+
+            assert result["status"] == "success"
+            assert result["collection"] == "test_collection"
+            assert result["committed"] is True
+            assert result["commit_type"] == "hard"
 
     @pytest.mark.asyncio
     async def test_commit_collection_not_found(
@@ -309,9 +321,10 @@ class TestCommit:
             await solr_client.commit(collection="test_collection")
 
     @pytest.mark.asyncio
-    async def test_commit_pysolr_error(self, solr_client, mock_pysolr_client):
-        """Test handling pysolr errors."""
-        mock_pysolr_client.commit.side_effect = Exception("Solr server error")
+    async def test_commit_request_error(self, solr_client):
+        """Test handling request errors."""
+        with patch("requests.post") as mock_post:
+            mock_post.side_effect = Exception("Connection error")
 
-        with pytest.raises(SolrError, match="Failed to commit"):
-            await solr_client.commit(collection="test_collection")
+            with pytest.raises(SolrError, match="Failed to commit"):
+                await solr_client.commit(collection="test_collection")

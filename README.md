@@ -99,7 +99,9 @@ For more detailed setup and usage instructions, see the [QUICKSTART.md](QUICKSTA
 
 - **solr_add_documents**: Add or update documents in a collection
 - **solr_delete_documents**: Delete documents by ID or query
-- **solr_commit**: Commit pending changes to a collection
+- **solr_commit**: Commit pending changes to a collection (supports soft/hard commits)
+- **solr_atomic_update**: Atomically update specific fields without reindexing entire documents
+- **solr_realtime_get**: Get documents in real-time, including uncommitted changes
 
 ### Highlighting & Stats
 
@@ -107,6 +109,13 @@ The `solr_query` tool supports:
 - **Highlighting**: Show matched terms in context with configurable snippet size and count
 - **Stats Component**: Compute min, max, mean, sum, stddev on numeric fields
 - Combine both features in a single query for rich search results
+
+### Advanced Indexing Features
+
+- **Atomic Updates**: Update specific fields without reindexing entire documents (set, inc, add, remove operations)
+- **Optimistic Concurrency**: Version-based locking with `_version_` field to prevent concurrent update conflicts
+- **Soft vs Hard Commits**: Choose between fast visibility (soft) or durability (hard) for your use case
+- **Real-Time Get**: Retrieve documents immediately, even before commit, for near real-time applications
 
 ## Requirements
 
