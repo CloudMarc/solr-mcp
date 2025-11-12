@@ -2,4 +2,5 @@
 
 from .ollama import OllamaVectorProvider
 
+
 __all__ = ["OllamaVectorProvider"]

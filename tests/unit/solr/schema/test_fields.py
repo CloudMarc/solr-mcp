@@ -1,7 +1,6 @@
 """Tests for solr_mcp.solr.schema.fields module."""
 
-import json
-from typing import Any, Dict
+from typing import Any
 from unittest.mock import Mock, patch
 
 import pytest
@@ -18,7 +17,7 @@ def field_manager():
 
 
 @pytest.fixture
-def mock_schema_response() -> Dict[str, Any]:
+def mock_schema_response() -> dict[str, Any]:
     """Create a mock schema response."""
     return {
         "schema": {
@@ -186,14 +185,16 @@ def test_get_field_info_specific_field(field_manager, mock_schema_response):
 
 def test_get_field_info_nonexistent_field(field_manager, mock_schema_response):
     """Test getting field info for non-existent field."""
-    with patch.object(
-        field_manager, "get_schema", return_value=mock_schema_response["schema"]
-    ):
-        with pytest.raises(
+    with (
+        patch.object(
+            field_manager, "get_schema", return_value=mock_schema_response["schema"]
+        ),
+        pytest.raises(
             SchemaError,
             match="Field nonexistent not found in collection test_collection",
-        ):
-            field_manager.get_field_info("test_collection", "nonexistent")
+        ),
+    ):
+        field_manager.get_field_info("test_collection", "nonexistent")
 
 
 def test_get_schema_cached(field_manager, mock_schema_response):
@@ -285,11 +286,13 @@ def test_get_field_type(field_manager, mock_schema_response):
 
 def test_get_field_type_not_found(field_manager, mock_schema_response):
     """Test getting field type for a non-existent field."""
-    with patch.object(
-        field_manager, "get_schema", return_value=mock_schema_response["schema"]
+    with (
+        patch.object(
+            field_manager, "get_schema", return_value=mock_schema_response["schema"]
+        ),
+        pytest.raises(SchemaError, match="Field not found: nonexistent"),
     ):
-        with pytest.raises(SchemaError, match="Field not found: nonexistent"):
-            field_manager.get_field_type("test_collection", "nonexistent")
+        field_manager.get_field_type("test_collection", "nonexistent")
 
 
 def test_validate_field_exists_success(field_manager):
@@ -319,13 +322,13 @@ def test_validate_field_exists_not_found(field_manager):
 
 def test_validate_field_exists_error(field_manager):
     """Test field validation with error."""
-    with patch.object(
-        field_manager, "get_field_info", side_effect=Exception("Test error")
+    with (
+        patch.object(
+            field_manager, "get_field_info", side_effect=Exception("Test error")
+        ),
+        pytest.raises(SchemaError, match="Error validating field test: Test error"),
     ):
-        with pytest.raises(
-            SchemaError, match="Error validating field test: Test error"
-        ):
-            field_manager.validate_field_exists("test", "test_collection")
+        field_manager.validate_field_exists("test", "test_collection")
 
 
 def test_validate_sort_field_success(field_manager):
@@ -350,13 +353,15 @@ def test_validate_sort_field_not_found(field_manager):
 
 def test_validate_sort_field_error(field_manager):
     """Test sort field validation with error."""
-    with patch.object(
-        field_manager, "get_field_info", side_effect=Exception("Test error")
-    ):
-        with pytest.raises(
+    with (
+        patch.object(
+            field_manager, "get_field_info", side_effect=Exception("Test error")
+        ),
+        pytest.raises(
             SchemaError, match="Error validating sort field test: Test error"
-        ):
-            field_manager.validate_sort_field("test", "test_collection")
+        ),
+    ):
+        field_manager.validate_sort_field("test", "test_collection")
 
 
 def test_get_field_types_cached(field_manager, mock_schema_response):
@@ -574,15 +579,17 @@ def test_get_sortable_fields_success(field_manager):
             },  # Multi-valued, should be skipped
         ]
     }
-    with patch("requests.get", return_value=mock_response):
-        with patch(
+    with (
+        patch("requests.get", return_value=mock_response),
+        patch(
             "solr_mcp.solr.schema.fields.FIELD_TYPE_MAPPING",
             {"string": "string", "plong": "numeric"},
-        ):
-            fields = field_manager._get_sortable_fields("test_collection")
-            assert "field1" in fields
-            assert "field2" in fields
-            assert "field3" not in fields  # Multi-valued
+        ),
+    ):
+        fields = field_manager._get_sortable_fields("test_collection")
+        assert "field1" in fields
+        assert "field2" in fields
+        assert "field3" not in fields  # Multi-valued
 
 
 def test_get_sortable_fields_error_fallback(field_manager):

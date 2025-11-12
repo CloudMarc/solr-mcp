@@ -1,17 +1,11 @@
 """Tests for SolrClient."""
 
-import asyncio
-from unittest.mock import AsyncMock, Mock, patch
+from unittest.mock import AsyncMock, Mock
 
-import aiohttp
-import pysolr
 import pytest
-import requests
-from aiohttp import test_utils
 
 from solr_mcp.solr.client import SolrClient
 from solr_mcp.solr.exceptions import (
-    ConnectionError,
     DocValuesError,
     QueryError,
     SolrError,

@@ -1,14 +1,14 @@
 """Interfaces for Solr client components."""
 
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 
 class CollectionProvider(ABC):
     """Interface for providing collection information."""
 
     @abstractmethod
-    async def list_collections(self) -> List[str]:
+    async def list_collections(self) -> list[str]:
         """List all available collections.
 
         Returns:
@@ -40,8 +40,8 @@ class VectorSearchProvider(ABC):
 
     @abstractmethod
     def execute_vector_search(
-        self, client: Any, vector: List[float], field: str, top_k: Optional[int] = None
-    ) -> Dict[str, Any]:
+        self, client: Any, vector: list[float], field: str, top_k: int | None = None
+    ) -> dict[str, Any]:
         """Execute a vector similarity search.
 
         Args:
@@ -59,7 +59,7 @@ class VectorSearchProvider(ABC):
         pass
 
     @abstractmethod
-    async def get_vector(self, text: str) -> List[float]:
+    async def get_vector(self, text: str) -> list[float]:
         """Get vector for text.
 
         Args:

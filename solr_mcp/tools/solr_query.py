@@ -1,6 +1,6 @@
 """Tool for executing standard Solr queries with highlighting and stats."""
 
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from solr_mcp.tools.tool_decorator import tool
 
@@ -10,17 +10,17 @@ async def execute_query(
     mcp,
     collection: str,
     q: str = "*:*",
-    fq: Optional[List[str]] = None,
-    fl: Optional[str] = None,
+    fq: list[str] | None = None,
+    fl: str | None = None,
     rows: int = 10,
     start: int = 0,
-    sort: Optional[str] = None,
-    highlight_fields: Optional[List[str]] = None,
+    sort: str | None = None,
+    highlight_fields: list[str] | None = None,
     highlight_snippets: int = 3,
     highlight_fragsize: int = 100,
     highlight_method: str = "unified",
-    stats_fields: Optional[List[str]] = None,
-) -> Dict[str, Any]:
+    stats_fields: list[str] | None = None,
+) -> dict[str, Any]:
     """Execute standard Solr query with highlighting and stats support.
 
     This tool provides access to Solr's standard query parser with support for

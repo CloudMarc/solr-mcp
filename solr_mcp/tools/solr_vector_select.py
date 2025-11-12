@@ -1,14 +1,12 @@
 """Tool for executing vector search queries against Solr collections."""
 
-from typing import Dict, List, Optional
-
 from solr_mcp.tools.tool_decorator import tool
 
 
 @tool()
 async def execute_vector_select_query(
-    mcp, query: str, vector: List[float], field: Optional[str] = None
-) -> Dict:
+    mcp, query: str, vector: list[float], field: str | None = None
+) -> dict:
     """Execute vector search queries against Solr collections.
 
     Extends solr_select tool with vector search capabilities.

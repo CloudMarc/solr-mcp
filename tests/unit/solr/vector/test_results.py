@@ -1,6 +1,6 @@
 """Tests for solr_mcp.solr.vector.results module."""
 
-from typing import Any, Dict
+from typing import Any
 
 import pytest
 
@@ -8,7 +8,7 @@ from solr_mcp.solr.vector.results import VectorSearchResult, VectorSearchResults
 
 
 @pytest.fixture
-def sample_result_data() -> Dict[str, Any]:
+def sample_result_data() -> dict[str, Any]:
     """Create sample result data."""
     return {
         "docid": "123",
@@ -19,7 +19,7 @@ def sample_result_data() -> Dict[str, Any]:
 
 
 @pytest.fixture
-def sample_solr_response() -> Dict[str, Any]:
+def sample_solr_response() -> dict[str, Any]:
     """Create sample Solr response."""
     return {
         "responseHeader": {"QTime": 50},

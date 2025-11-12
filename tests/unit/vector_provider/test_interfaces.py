@@ -1,12 +1,8 @@
 """Tests for vector provider interfaces."""
 
-from typing import List
-
 import pytest
 
 from solr_mcp.vector_provider.exceptions import (
-    VectorConfigError,
-    VectorConnectionError,
     VectorGenerationError,
 )
 from solr_mcp.vector_provider.interfaces import VectorProvider
@@ -19,12 +15,12 @@ class MockVectorProvider(VectorProvider):
         self._dimension = dimension
         self._model = "mock-model"
 
-    async def get_vector(self, text: str) -> List[float]:
+    async def get_vector(self, text: str) -> list[float]:
         if text == "error":
             raise VectorGenerationError("Test error")
         return [0.1] * self._dimension
 
-    async def get_vectors(self, texts: List[str]) -> List[List[float]]:
+    async def get_vectors(self, texts: list[str]) -> list[list[float]]:
         if any(t == "error" for t in texts):
             raise VectorGenerationError("Test error")
         return [[0.1] * self._dimension for _ in texts]

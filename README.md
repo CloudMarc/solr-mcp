@@ -49,26 +49,27 @@ See [MAKEFILE.md](MAKEFILE.md) for all available commands.
 ### Manual Setup
 
 1. Clone this repository
-2. Start SolrCloud with Docker:
+2. Install uv (fast Python package manager):
+   ```bash
+   curl -LsSf https://astral.sh/uv/install.sh | sh
+   ```
+3. Start SolrCloud with Docker:
    ```bash
    docker-compose up -d
    ```
-3. Install dependencies:
+4. Install dependencies:
    ```bash
-   python -m venv venv
-   source venv/bin/activate  # On Windows: venv\Scripts\activate
-   pip install poetry
-   poetry install
+   uv sync --extra test
    ```
-4. Process and index the sample document:
+5. Process and index the sample document:
    ```bash
-   python scripts/process_markdown.py data/bitcoin-whitepaper.md --output data/processed/bitcoin_sections.json
-   python scripts/create_unified_collection.py unified
-   python scripts/unified_index.py data/processed/bitcoin_sections.json --collection unified
+   uv run python scripts/process_markdown.py data/bitcoin-whitepaper.md --output data/processed/bitcoin_sections.json
+   uv run python scripts/create_unified_collection.py unified
+   uv run python scripts/unified_index.py data/processed/bitcoin_sections.json --collection unified
    ```
-5. Run the MCP server:
+6. Run the MCP server:
    ```bash
-   poetry run python -m solr_mcp.server
+   uv run solr-mcp
    ```
 
 For more detailed setup and usage instructions, see the [QUICKSTART.md](QUICKSTART.md) guide.
@@ -120,9 +121,22 @@ The `solr_query` tool supports:
 ## Requirements
 
 - Python 3.10 or higher
+- [uv](https://github.com/astral-sh/uv) (fast Python package manager)
 - Docker and Docker Compose
 - SolrCloud 9.x
 - Ollama (for embedding generation)
+
+## Installation
+
+```bash
+# Install uv (if not already installed)
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# Install dependencies
+make install
+# or
+uv sync --extra test
+```
 
 ## License
 

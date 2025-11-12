@@ -7,10 +7,6 @@ import requests
 
 from solr_mcp.vector_provider.clients.ollama import OllamaVectorProvider
 from solr_mcp.vector_provider.constants import DEFAULT_OLLAMA_CONFIG, MODEL_DIMENSIONS
-from solr_mcp.vector_provider.exceptions import (
-    VectorConnectionError,
-    VectorGenerationError,
-)
 
 
 @pytest.fixture

@@ -1,7 +1,6 @@
 """Tests for Solr MCP tools."""
 
-import json
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import AsyncMock
 
 import pytest
 

@@ -1,6 +1,6 @@
 """Ollama vector provider implementation."""
 
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 import requests
 from loguru import logger
@@ -35,7 +35,7 @@ class OllamaVectorProvider(VectorSearchProvider):
             f"Initialized Ollama vector provider with model={model} at {base_url} (timeout={timeout}s, retries={retries})"
         )
 
-    async def get_vector(self, text: str, model: Optional[str] = None) -> List[float]:
+    async def get_vector(self, text: str, model: str | None = None) -> list[float]:
         """Get vector for a single text.
 
         Args:
@@ -69,8 +69,8 @@ class OllamaVectorProvider(VectorSearchProvider):
                 continue
 
     async def get_vectors(
-        self, texts: List[str], model: Optional[str] = None
-    ) -> List[List[float]]:
+        self, texts: list[str], model: str | None = None
+    ) -> list[list[float]]:
         """Get vector for multiple texts.
 
         Args:
@@ -90,8 +90,8 @@ class OllamaVectorProvider(VectorSearchProvider):
         return results
 
     async def execute_vector_search(
-        self, client: Any, vector: List[float], top_k: int = 10
-    ) -> Dict[str, Any]:
+        self, client: Any, vector: list[float], top_k: int = 10
+    ) -> dict[str, Any]:
         """Execute vector similarity search.
 
         Args:

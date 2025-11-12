@@ -1,7 +1,6 @@
 """Collection providers for SolrCloud."""
 
 import logging
-from typing import List, Optional
 
 import anyio
 import requests
@@ -10,6 +9,7 @@ from kazoo.exceptions import ConnectionLoss, NoNodeError
 
 from solr_mcp.solr.exceptions import ConnectionError, SolrError
 from solr_mcp.solr.interfaces import CollectionProvider
+
 
 logger = logging.getLogger(__name__)
 
@@ -25,7 +25,7 @@ class HttpCollectionProvider(CollectionProvider):
         """
         self.base_url = base_url.rstrip("/")
 
-    async def list_collections(self) -> List[str]:
+    async def list_collections(self) -> list[str]:
         """List all available collections using Solr HTTP API.
 
         Returns:
@@ -67,7 +67,7 @@ class HttpCollectionProvider(CollectionProvider):
 class ZooKeeperCollectionProvider(CollectionProvider):
     """Collection provider that uses ZooKeeper to discover collections."""
 
-    def __init__(self, hosts: List[str]):
+    def __init__(self, hosts: list[str]):
         """Initialize with ZooKeeper hosts.
 
         Args:
@@ -103,7 +103,7 @@ class ZooKeeperCollectionProvider(CollectionProvider):
             finally:
                 self.zk = None
 
-    async def list_collections(self) -> List[str]:
+    async def list_collections(self) -> list[str]:
         """List available collections from ZooKeeper.
 
         Returns:

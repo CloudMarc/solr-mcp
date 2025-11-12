@@ -1,6 +1,6 @@
 """Tool for adding fields to Solr schema."""
 
-from typing import Any, Dict, Optional
+from typing import Any
 
 from solr_mcp.tools.tool_decorator import tool
 
@@ -15,8 +15,8 @@ async def execute_schema_add_field(
     indexed: bool = True,
     required: bool = False,
     multiValued: bool = False,
-    docValues: Optional[bool] = None,
-) -> Dict[str, Any]:
+    docValues: bool | None = None,
+) -> dict[str, Any]:
     """Add a new field to a Solr collection's schema.
 
     This tool allows dynamic schema modification by adding new fields.

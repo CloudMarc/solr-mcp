@@ -1,7 +1,7 @@
 """SolrCloud client implementation."""
 
 import logging
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 import pysolr
 from loguru import logger
@@ -12,7 +12,6 @@ from solr_mcp.solr.collections import (
 )
 from solr_mcp.solr.config import SolrConfig
 from solr_mcp.solr.exceptions import (
-    ConnectionError,
     DocValuesError,
     IndexingError,
     QueryError,
@@ -27,7 +26,7 @@ from solr_mcp.solr.response import ResponseFormatter
 from solr_mcp.solr.schema import FieldManager
 from solr_mcp.solr.vector import VectorManager, VectorSearchResults
 from solr_mcp.vector_provider import OllamaVectorProvider
-from solr_mcp.vector_provider.constants import MODEL_DIMENSIONS
+
 
 logger = logging.getLogger(__name__)
 
@@ -38,13 +37,13 @@ class SolrClient:
     def __init__(
         self,
         config: SolrConfig,
-        collection_provider: Optional[CollectionProvider] = None,
-        solr_client: Optional[pysolr.Solr] = None,
-        field_manager: Optional[FieldManager] = None,
-        vector_provider: Optional[VectorSearchProvider] = None,
-        query_builder: Optional[QueryBuilder] = None,
-        query_executor: Optional[QueryExecutor] = None,
-        response_formatter: Optional[ResponseFormatter] = None,
+        collection_provider: CollectionProvider | None = None,
+        solr_client: pysolr.Solr | None = None,
+        field_manager: FieldManager | None = None,
+        vector_provider: VectorSearchProvider | None = None,
+        query_builder: QueryBuilder | None = None,
+        query_executor: QueryExecutor | None = None,
+        response_formatter: ResponseFormatter | None = None,
     ):
         """Initialize the SolrClient with the given configuration and optional dependencies.
 
@@ -92,7 +91,9 @@ class SolrClient:
 
         # Initialize vector manager with default top_k of 10
         self.vector_manager = VectorManager(
-            self, self.vector_provider, 10  # Default value for top_k
+            self,
+            self.vector_provider,
+            10,  # Default value for top_k
         )
 
         # Initialize Solr client
@@ -121,14 +122,14 @@ class SolrClient:
 
         return self._solr_client
 
-    async def list_collections(self) -> List[str]:
+    async def list_collections(self) -> list[str]:
         """List all available collections."""
         try:
             return await self.collection_provider.list_collections()
         except Exception as e:
             raise SolrError(f"Failed to list collections: {str(e)}")
 
-    async def list_fields(self, collection: str) -> List[Dict[str, Any]]:
+    async def list_fields(self, collection: str) -> list[dict[str, Any]]:
         """List all fields in a collection with their properties."""
         try:
             return await self.field_manager.list_fields(collection)
@@ -139,11 +140,11 @@ class SolrClient:
 
     def _format_search_results(
         self, results: pysolr.Results, start: int = 0
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Format Solr search results for LLM consumption."""
         return self.response_formatter.format_search_results(results, start)
 
-    async def execute_select_query(self, query: str) -> Dict[str, Any]:
+    async def execute_select_query(self, query: str) -> dict[str, Any]:
         """Execute a SQL SELECT query against Solr using the SQL interface."""
         try:
             # Parse and validate query
@@ -168,8 +169,8 @@ class SolrClient:
             raise SQLExecutionError(f"SQL query failed: {str(e)}")
 
     async def execute_vector_select_query(
-        self, query: str, vector: List[float], field: Optional[str] = None
-    ) -> Dict[str, Any]:
+        self, query: str, vector: list[float], field: str | None = None
+    ) -> dict[str, Any]:
         """Execute SQL query filtered by vector similarity search.
 
         Args:
@@ -278,9 +279,9 @@ class SolrClient:
         self,
         query: str,
         text: str,
-        field: Optional[str] = None,
-        vector_provider_config: Optional[Dict[str, Any]] = None,
-    ) -> Dict[str, Any]:
+        field: str | None = None,
+        vector_provider_config: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
         """Execute SQL query filtered by semantic similarity.
 
         Args:
@@ -324,11 +325,11 @@ class SolrClient:
     async def add_documents(
         self,
         collection: str,
-        documents: List[Dict[str, Any]],
+        documents: list[dict[str, Any]],
         commit: bool = True,
-        commit_within: Optional[int] = None,
+        commit_within: int | None = None,
         overwrite: bool = True,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Add or update documents in a Solr collection.
 
         Args:
@@ -385,10 +386,10 @@ class SolrClient:
     async def delete_documents(
         self,
         collection: str,
-        ids: Optional[List[str]] = None,
-        query: Optional[str] = None,
+        ids: list[str] | None = None,
+        query: str | None = None,
         commit: bool = True,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Delete documents from a Solr collection.
 
         Args:
@@ -448,7 +449,7 @@ class SolrClient:
         soft: bool = False,
         wait_searcher: bool = True,
         expunge_deletes: bool = False,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Commit pending changes to a Solr collection.
 
         Args:
@@ -509,17 +510,17 @@ class SolrClient:
         self,
         collection: str,
         q: str = "*:*",
-        fq: Optional[List[str]] = None,
-        fl: Optional[str] = None,
+        fq: list[str] | None = None,
+        fl: str | None = None,
         rows: int = 10,
         start: int = 0,
-        sort: Optional[str] = None,
-        highlight_fields: Optional[List[str]] = None,
+        sort: str | None = None,
+        highlight_fields: list[str] | None = None,
         highlight_snippets: int = 3,
         highlight_fragsize: int = 100,
         highlight_method: str = "unified",
-        stats_fields: Optional[List[str]] = None,
-    ) -> Dict[str, Any]:
+        stats_fields: list[str] | None = None,
+    ) -> dict[str, Any]:
         """Execute a standard Solr query with optional highlighting and stats.
 
         Args:
@@ -617,12 +618,12 @@ class SolrClient:
         self,
         collection: str,
         field: str,
-        prefix: Optional[str] = None,
-        regex: Optional[str] = None,
+        prefix: str | None = None,
+        regex: str | None = None,
         limit: int = 10,
         min_count: int = 1,
-        max_count: Optional[int] = None,
-    ) -> Dict[str, Any]:
+        max_count: int | None = None,
+    ) -> dict[str, Any]:
         """Get terms from a field using Solr's Terms Component.
 
         Args:
@@ -703,8 +704,8 @@ class SolrClient:
         indexed: bool = True,
         required: bool = False,
         multiValued: bool = False,
-        docValues: Optional[bool] = None,
-    ) -> Dict[str, Any]:
+        docValues: bool | None = None,
+    ) -> dict[str, Any]:
         """Add a field to the schema.
 
         Args:
@@ -765,7 +766,7 @@ class SolrClient:
         except Exception as e:
             raise SolrError(f"Failed to add field: {str(e)}")
 
-    async def get_schema_fields(self, collection: str) -> Dict[str, Any]:
+    async def get_schema_fields(self, collection: str) -> dict[str, Any]:
         """Get all fields from the schema.
 
         Args:
@@ -805,7 +806,7 @@ class SolrClient:
 
     async def get_schema_field(
         self, collection: str, field_name: str
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Get a specific field from the schema.
 
         Args:
@@ -845,7 +846,7 @@ class SolrClient:
 
     async def delete_schema_field(
         self, collection: str, field_name: str
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Delete a field from the schema.
 
         Args:
@@ -891,11 +892,11 @@ class SolrClient:
         self,
         collection: str,
         doc_id: str,
-        updates: Dict[str, Dict[str, Any]],
-        version: Optional[int] = None,
+        updates: dict[str, dict[str, Any]],
+        version: int | None = None,
         commit: bool = False,
-        commitWithin: Optional[int] = None,
-    ) -> Dict[str, Any]:
+        commitWithin: int | None = None,
+    ) -> dict[str, Any]:
         """Atomically update specific fields in a document.
 
         Args:
@@ -988,9 +989,9 @@ class SolrClient:
     async def realtime_get(
         self,
         collection: str,
-        doc_ids: List[str],
-        fl: Optional[str] = None,
-    ) -> Dict[str, Any]:
+        doc_ids: list[str],
+        fl: str | None = None,
+    ) -> dict[str, Any]:
         """Get documents in real-time, including uncommitted changes.
 
         Args:

@@ -1,7 +1,6 @@
 """Tool for getting information about the default vector provider."""
 
-import re
-from typing import Any, Dict
+from typing import Any
 from urllib.parse import urlparse
 
 from solr_mcp.tools.tool_decorator import tool
@@ -9,7 +8,7 @@ from solr_mcp.vector_provider.constants import DEFAULT_OLLAMA_CONFIG, MODEL_DIME
 
 
 @tool()
-async def get_default_text_vectorizer(mcp) -> Dict[str, Any]:
+async def get_default_text_vectorizer(mcp) -> dict[str, Any]:
     """Get information about the default vector provider used for semantic search.
 
     Returns information about the default vector provider configuration used for semantic search,

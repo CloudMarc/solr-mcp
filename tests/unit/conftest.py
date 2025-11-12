@@ -5,7 +5,6 @@ making them available to all tests without explicit imports.
 """
 
 # Import and expose all fixtures
-from unittest.mock import mock_open
 
 from .fixtures.common import *
 from .fixtures.config_fixtures import *

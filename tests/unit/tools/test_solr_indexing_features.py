@@ -518,9 +518,7 @@ async def test_workflow_update_soft_commit_hard_commit(mock_server):
     }
     mock_server.solr_client.commit.return_value = soft_commit_result
 
-    soft_response = await execute_commit(
-        mock_server, collection="products", soft=True
-    )
+    soft_response = await execute_commit(mock_server, collection="products", soft=True)
     assert soft_response["commit_type"] == "soft"
 
     # Hard commit for durability
@@ -532,7 +530,5 @@ async def test_workflow_update_soft_commit_hard_commit(mock_server):
     }
     mock_server.solr_client.commit.return_value = hard_commit_result
 
-    hard_response = await execute_commit(
-        mock_server, collection="products", soft=False
-    )
+    hard_response = await execute_commit(mock_server, collection="products", soft=False)
     assert hard_response["commit_type"] == "hard"

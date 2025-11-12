@@ -1,6 +1,6 @@
 """Tool for deleting documents from Solr."""
 
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from solr_mcp.tools.tool_decorator import tool
 
@@ -9,10 +9,10 @@ from solr_mcp.tools.tool_decorator import tool
 async def execute_delete_documents(
     mcp,
     collection: str,
-    ids: Optional[List[str]] = None,
-    query: Optional[str] = None,
+    ids: list[str] | None = None,
+    query: str | None = None,
     commit: bool = True,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Delete documents from a Solr collection.
 
     Deletes documents from the specified Solr collection either by document IDs

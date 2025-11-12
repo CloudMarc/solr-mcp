@@ -1,17 +1,16 @@
 """Schema and field management for SolrCloud client."""
 
-import json
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any
 
-import aiohttp
 import requests
 from loguru import logger
-from requests.exceptions import HTTPError, RequestException
+from requests.exceptions import HTTPError
 
 from solr_mcp.solr.constants import FIELD_TYPE_MAPPING, SYNTHETIC_SORT_FIELDS
-from solr_mcp.solr.exceptions import SchemaError, SolrError
+from solr_mcp.solr.exceptions import SchemaError
 from solr_mcp.solr.schema.cache import FieldCache
+
 
 logger = logging.getLogger(__name__)
 
@@ -35,7 +34,7 @@ class FieldManager:
         self._vector_field_cache = {}
         self.cache = FieldCache()
 
-    def get_schema(self, collection: str) -> Dict:
+    def get_schema(self, collection: str) -> dict:
         """Get schema for a collection.
 
         Args:
@@ -72,7 +71,7 @@ class FieldManager:
             logger.error(f"Error getting schema: {str(e)}")
             raise SchemaError(f"Failed to get schema: {str(e)}")
 
-    def get_field_types(self, collection: str) -> Dict[str, str]:
+    def get_field_types(self, collection: str) -> dict[str, str]:
         """Get field types for a collection."""
         if collection in self._field_types_cache:
             return self._field_types_cache[collection]
@@ -158,8 +157,8 @@ class FieldManager:
             raise SchemaError(f"Error validating sort field {field}: {str(e)}")
 
     def get_field_info(
-        self, collection: str, field: Optional[str] = None
-    ) -> Dict[str, Any]:
+        self, collection: str, field: str | None = None
+    ) -> dict[str, Any]:
         """Get field information for a collection.
 
         Args:
@@ -252,7 +251,7 @@ class FieldManager:
             logger.error(f"Error validating collection {collection}: {str(e)}")
             raise SchemaError(f"Collection {collection} does not exist: {str(e)}")
 
-    def clear_cache(self, collection: Optional[str] = None):
+    def clear_cache(self, collection: str | None = None):
         """Clear schema cache.
 
         Args:
@@ -265,7 +264,7 @@ class FieldManager:
             self._schema_cache = {}
             self._field_types_cache = {}
 
-    def _get_collection_fields(self, collection: str) -> Dict[str, Any]:
+    def _get_collection_fields(self, collection: str) -> dict[str, Any]:
         """Get or load field information for a collection.
 
         Args:
@@ -303,7 +302,7 @@ class FieldManager:
             # Use cached defaults
             return self.cache.get_or_default(collection)
 
-    def _get_searchable_fields(self, collection: str) -> List[str]:
+    def _get_searchable_fields(self, collection: str) -> list[str]:
         """Get list of searchable fields for a collection.
 
         Args:
@@ -387,7 +386,7 @@ class FieldManager:
             )
             return searchable_fields
 
-    def _get_sortable_fields(self, collection: str) -> Dict[str, Dict[str, Any]]:
+    def _get_sortable_fields(self, collection: str) -> dict[str, dict[str, Any]]:
         """Get list of sortable fields and their properties for a collection.
 
         Args:
@@ -449,7 +448,7 @@ class FieldManager:
             # Return only the guaranteed score field
             return {"score": SYNTHETIC_SORT_FIELDS["score"]}
 
-    def validate_fields(self, collection: str, fields: List[str]) -> None:
+    def validate_fields(self, collection: str, fields: list[str]) -> None:
         """Validate that the requested fields exist in the collection.
 
         Args:
@@ -473,7 +472,7 @@ class FieldManager:
                 f"Invalid fields for collection {collection}: {', '.join(invalid_fields)}"
             )
 
-    def validate_sort_fields(self, collection: str, sort_fields: List[str]) -> None:
+    def validate_sort_fields(self, collection: str, sort_fields: list[str]) -> None:
         """Validate that the requested sort fields are sortable in the collection.
 
         Args:
@@ -519,7 +518,7 @@ class FieldManager:
             logger.error(f"Error validating collection: {str(e)}")
             raise SchemaError(f"Error validating collection: {str(e)}")
 
-    async def list_fields(self, collection: str) -> List[Dict[str, Any]]:
+    async def list_fields(self, collection: str) -> list[dict[str, Any]]:
         """List all fields in a collection with their properties.
 
         Args:
@@ -607,9 +606,9 @@ class FieldManager:
         self,
         collection: str,
         field: str,
-        vector_provider_model: Optional[str] = None,
-        model_dimensions: Optional[Dict[str, int]] = None,
-    ) -> Dict[str, Any]:
+        vector_provider_model: str | None = None,
+        model_dimensions: dict[str, int] | None = None,
+    ) -> dict[str, Any]:
         """Validate that the vector field exists and its dimension matches the vectorizer.
 
         Args:

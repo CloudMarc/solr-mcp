@@ -1,12 +1,13 @@
 """Response formatters for Solr results."""
 
 import logging
-from typing import Any, Dict, List, Optional, Union
+from typing import Any
 
 import pysolr
 from loguru import logger
 
 from solr_mcp.solr.utils.formatting import format_search_results, format_sql_response
+
 
 logger = logging.getLogger(__name__)
 
@@ -17,7 +18,7 @@ class ResponseFormatter:
     @staticmethod
     def format_search_results(
         results: pysolr.Results, start: int = 0
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Format Solr search results for client consumption.
 
         Args:
@@ -30,7 +31,7 @@ class ResponseFormatter:
         return format_search_results(results, start)
 
     @staticmethod
-    def format_sql_response(response: Dict[str, Any]) -> Dict[str, Any]:
+    def format_sql_response(response: dict[str, Any]) -> dict[str, Any]:
         """Format Solr SQL response for client consumption.
 
         Args:
@@ -43,8 +44,8 @@ class ResponseFormatter:
 
     @staticmethod
     def format_vector_search_results(
-        results: Dict[str, Any], top_k: int
-    ) -> Dict[str, Any]:
+        results: dict[str, Any], top_k: int
+    ) -> dict[str, Any]:
         """Format vector search results.
 
         Args:

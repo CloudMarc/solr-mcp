@@ -1,6 +1,6 @@
 """Solr client exceptions."""
 
-from typing import Any, Dict, Optional
+from typing import Any
 
 
 class SolrError(Exception):
@@ -27,15 +27,15 @@ class QueryError(SolrError):
     def __init__(
         self,
         message: str,
-        error_type: Optional[str] = None,
-        response_time: Optional[int] = None,
+        error_type: str | None = None,
+        response_time: int | None = None,
     ):
         self.message = message
         self.error_type = error_type
         self.response_time = response_time
         super().__init__(self.message)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert the error to a dictionary format."""
         return {
             "error_type": self.error_type,
@@ -47,7 +47,7 @@ class QueryError(SolrError):
 class DocValuesError(QueryError):
     """Exception raised when a query requires DocValues but fields don't have them enabled."""
 
-    def __init__(self, message: str, response_time: Optional[int] = None):
+    def __init__(self, message: str, response_time: int | None = None):
         super().__init__(
             message, error_type="MISSING_DOCVALUES", response_time=response_time
         )
@@ -56,14 +56,14 @@ class DocValuesError(QueryError):
 class SQLParseError(QueryError):
     """Exception raised when SQL query parsing fails."""
 
-    def __init__(self, message: str, response_time: Optional[int] = None):
+    def __init__(self, message: str, response_time: int | None = None):
         super().__init__(message, error_type="PARSE_ERROR", response_time=response_time)
 
 
 class SQLExecutionError(QueryError):
     """Exception raised for other SQL execution errors."""
 
-    def __init__(self, message: str, response_time: Optional[int] = None):
+    def __init__(self, message: str, response_time: int | None = None):
         super().__init__(
             message, error_type="SOLR_SQL_ERROR", response_time=response_time
         )
@@ -89,7 +89,7 @@ class SchemaError(SolrError):
         self.collection = collection
         super().__init__(message)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert the error to a dictionary format."""
         return {
             "error_type": self.error_type,

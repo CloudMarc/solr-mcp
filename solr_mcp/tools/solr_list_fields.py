@@ -1,12 +1,12 @@
 """Tool for listing fields in a Solr collection."""
 
-from typing import Any, Dict
+from typing import Any
 
 from solr_mcp.tools.tool_decorator import tool
 
 
 @tool()
-async def execute_list_fields(mcp: str, collection: str) -> Dict[str, Any]:
+async def execute_list_fields(mcp: str, collection: str) -> dict[str, Any]:
     """List all fields in a Solr collection.
 
     This tool provides detailed information about each field in a Solr collection,

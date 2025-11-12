@@ -1,12 +1,10 @@
 """Tool for executing SQL SELECT queries against Solr."""
 
-from typing import Dict
-
 from solr_mcp.tools.tool_decorator import tool
 
 
 @tool()
-async def execute_select_query(mcp, query: str) -> Dict:
+async def execute_select_query(mcp, query: str) -> dict:
     """Execute SQL queries against Solr collections.
 
     Executes SQL queries against Solr collections with the following Solr-specific behaviors:

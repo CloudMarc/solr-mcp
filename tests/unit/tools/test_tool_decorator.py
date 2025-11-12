@@ -1,6 +1,6 @@
 """Tests for tool decorator functionality."""
 
-from typing import Any, List, Literal, Optional, Union
+from typing import Any, Literal
 
 import pytest
 
@@ -75,7 +75,7 @@ def test_get_schema_basic_types():
         int_param: int,
         float_param: float,
         bool_param: bool,
-        optional_str: Optional[str] = None,
+        optional_str: str | None = None,
         default_int: int = 42,
     ):
         """Test tool with basic types.
@@ -114,10 +114,10 @@ def test_get_schema_complex_types():
 
     @tool()
     async def complex_types_tool(
-        str_list: List[str],
+        str_list: list[str],
         mode: Literal["a", "b", "c"],
-        optional_mode: Optional[Literal["x", "y", "z"]] = None,
-        union_type: Union[str, int] = "default",
+        optional_mode: Literal["x", "y", "z"] | None = None,
+        union_type: str | int = "default",
     ):
         """Test tool with complex types.
 
@@ -181,10 +181,10 @@ def test_get_schema_docstring_parsing():
 
     properties = schema["inputSchema"]["properties"]
     assert (
-        "First parameter with multiline description"
-        == properties["param1"]["description"]
+        properties["param1"]["description"]
+        == "First parameter with multiline description"
     )
-    assert "Second parameter with multiple lines" == properties["param2"]["description"]
+    assert properties["param2"]["description"] == "Second parameter with multiple lines"
 
 
 def test_get_schema_no_docstring():
@@ -230,9 +230,9 @@ def test_get_schema_edge_cases():
     properties = schema["inputSchema"]["properties"]
 
     # Test that parameter descriptions are captured correctly
-    assert "First parameter" == properties["param1"]["description"]
-    assert "Second parameter" == properties["param2"]["description"]
-    assert "Third parameter" == properties["param3"]["description"]
+    assert properties["param1"]["description"] == "First parameter"
+    assert properties["param2"]["description"] == "Second parameter"
+    assert properties["param3"]["description"] == "Third parameter"
 
     # Test that empty lines and sections after Args are properly handled
     assert "Tool with edge case documentation" in schema["description"]

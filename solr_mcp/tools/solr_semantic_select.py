@@ -1,15 +1,12 @@
 """Tool for executing semantic search queries against Solr collections."""
 
-from typing import Dict, List, Optional
-
 from solr_mcp.tools.tool_decorator import tool
-from solr_mcp.vector_provider.constants import DEFAULT_OLLAMA_CONFIG
 
 
 @tool()
 async def execute_semantic_select_query(
-    mcp, query: str, text: str, field: Optional[str] = None, vector_provider: str = ""
-) -> Dict:
+    mcp, query: str, text: str, field: str | None = None, vector_provider: str = ""
+) -> dict:
     """Execute semantic search queries against Solr collections.
 
     Extends solr_select tool with semantic search capabilities.

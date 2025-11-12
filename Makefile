@@ -1,12 +1,19 @@
-.PHONY: help install install-dev test test-unit test-integration test-cov test-cov-html \
-        lint format check clean clean-test clean-pyc clean-build \
-        docker-build docker-up docker-down docker-logs docker-restart \
-        solr-start solr-stop solr-create-collection solr-status \
-        run server dev \
-        docs-build docs-serve \
-        publish version
+# Use bash for all recipes
+SHELL := /bin/bash
+
+# Define the default virtual environment directory
+VENV_DIR ?= .venv
 
 .DEFAULT_GOAL := help
+
+# Prevent make from conflicting with file names
+.PHONY: all install dev run test test-unit test-integration test-cov test-cov-html \
+        test-priority-critical test-priority-high test-roadmap \
+        lint typecheck format clean clean-test clean-pyc clean-build \
+        docker-up docker-down docker-logs docker-restart docker-clean \
+        solr-status solr-collections solr-create-test solr-create-unified \
+        solr-index-test solr-index-unified \
+        help .install-uv
 
 # Colors for terminal output
 CYAN := \033[0;36m
@@ -16,105 +23,132 @@ RED := \033[0;31m
 NC := \033[0m # No Color
 
 # Project variables
-PYTHON := python3
-VENV := .venv
-POETRY := poetry
-PYTEST := $(VENV)/bin/pytest
 COVERAGE_MIN := 66
 
-##@ General
+## --------------------------------------
+## Internal Prerequisites
+## --------------------------------------
 
-help: ## Display this help message
-	@echo "$(CYAN)Solr MCP - Makefile Commands$(NC)"
-	@echo ""
-	@awk 'BEGIN {FS = ":.*##"; printf "Usage:\n  make $(CYAN)<target>$(NC)\n"} /^[a-zA-Z_-]+:.*?##/ { printf "  $(CYAN)%-20s$(NC) %s\n", $$1, $$2 } /^##@/ { printf "\n$(YELLOW)%s$(NC)\n", substr($$0, 5) } ' $(MAKEFILE_LIST)
+# This hidden target checks if 'uv' is installed
+.install-uv:
+	@command -v uv >/dev/null 2>&1 || { echo "$(RED)Error: 'uv' not found. Install with: curl -LsSf https://astral.sh/uv/install.sh | sh$(NC)" >&2; exit 1; }
 
-##@ Installation & Setup
+## --------------------------------------
+## Project Setup & Installation
+## --------------------------------------
 
-install: ## Install production dependencies using Poetry
-	@echo "$(GREEN)Installing production dependencies...$(NC)"
-	$(POETRY) install --only main
+# `uv sync` creates the venv AND installs all dependencies
+install: .install-uv ## Install all dependencies into .venv
+	@echo "$(GREEN)--- 📦 Installing dependencies into $(VENV_DIR) ---$(NC)"
+	uv sync --extra test
 
-install-dev: ## Install all dependencies including dev dependencies
-	@echo "$(GREEN)Installing development dependencies...$(NC)"
-	$(POETRY) install
-	@echo "$(GREEN)✓ Development environment ready$(NC)"
+# Alias for install (for compatibility)
+all: install
 
-setup: install-dev ## Full setup: install deps + setup pre-commit hooks
-	@echo "$(GREEN)Setting up project...$(NC)"
-	@if command -v pre-commit > /dev/null; then \
-		pre-commit install; \
-		echo "$(GREEN)✓ Pre-commit hooks installed$(NC)"; \
-	else \
-		echo "$(YELLOW)⚠ pre-commit not found, skipping hook installation$(NC)"; \
-	fi
+install-dev: install ## Alias for install (installs all deps including test)
 
-##@ Testing
+setup: install ## Full setup: install deps + check environment
+	@echo "$(GREEN)--- ✓ Development environment ready ---$(NC)"
 
-test: ## Run unit tests with coverage (no Docker required)
-	@echo "$(GREEN)Running unit tests with coverage...$(NC)"
-	$(POETRY) run pytest tests/unit --cov=solr_mcp --cov-report=term-missing --cov-fail-under=$(COVERAGE_MIN)
+## --------------------------------------
+## Testing & QA
+## --------------------------------------
 
-test-unit: ## Run unit tests only (fast, no coverage)
-	@echo "$(GREEN)Running unit tests (no coverage)...$(NC)"
-	$(POETRY) run pytest tests/unit -v
+# Run unit tests only (no coverage, fast)
+test-unit: install ## Run unit tests only (fast, no coverage)
+	@echo "$(GREEN)--- 🐍 Running Python unit tests ---$(NC)"
+	uv run env PYTHONPATH=. pytest tests/unit -v
 
-test-all: ## Run all tests (unit + integration, requires Docker/Solr)
+# Run unit tests with coverage
+test: install ## Run unit tests with coverage
+	@echo "$(GREEN)--- 🧪 Running tests with coverage ---$(NC)"
+	uv run env PYTHONPATH=. pytest tests/unit --cov=solr_mcp --cov-report=term-missing --cov-fail-under=$(COVERAGE_MIN)
+
+# Run integration tests only (requires Solr)
+test-integration: install ## Run integration tests (requires Solr running)
 	@echo "$(YELLOW)Warning: This requires Solr to be running (make docker-up)$(NC)"
-	@echo "$(GREEN)Running all tests...$(NC)"
-	$(POETRY) run pytest tests/ -v
+	@echo "$(GREEN)--- 🔗 Running integration tests ---$(NC)"
+	uv run env PYTHONPATH=. pytest tests/integration -m integration -v
 
-test-integration: ## Run integration tests only (requires Solr)
+# Run all tests (unit + integration)
+test-all: install ## Run all tests (unit + integration, requires Solr)
 	@echo "$(YELLOW)Warning: This requires Solr to be running (make docker-up)$(NC)"
-	@echo "$(GREEN)Running integration tests...$(NC)"
-	$(POETRY) run pytest tests/integration -v -m integration
+	@echo "$(GREEN)--- 🧪 Running all tests ---$(NC)"
+	uv run env PYTHONPATH=. pytest tests/ -v
 
-test-cov: ## Alias for 'make test' (unit tests with coverage)
-	@$(MAKE) test
-
-test-cov-html: ## Run tests with HTML coverage report
-	@echo "$(GREEN)Generating HTML coverage report...$(NC)"
-	$(POETRY) run pytest tests/unit --cov=solr_mcp --cov-report=html --cov-report=term
+# Generate HTML coverage report
+test-cov-html: install ## Run tests with HTML coverage report
+	@echo "$(GREEN)--- 📊 Generating HTML coverage report ---$(NC)"
+	uv run env PYTHONPATH=. pytest tests/unit --cov=solr_mcp --cov-report=html --cov-report=term
 	@echo "$(GREEN)✓ Coverage report generated at: htmlcov/index.html$(NC)"
 	@if command -v open > /dev/null; then \
 		open htmlcov/index.html; \
 	fi
 
-test-watch: ## Run tests in watch mode (requires pytest-watch)
-	@echo "$(GREEN)Running tests in watch mode...$(NC)"
-	$(POETRY) run ptw -- tests/unit -v
+# Alias for test
+test-cov: test
 
-##@ Code Quality
+# Run tests by priority
+test-priority-critical: install ## Run critical priority tests
+	@echo "$(GREEN)--- 🔴 Running critical priority tests ---$(NC)"
+	uv run env PYTHONPATH=. pytest -m priority_critical -v
 
-lint: ## Run linting checks (flake8, mypy)
-	@echo "$(GREEN)Running linters...$(NC)"
-	$(POETRY) run lint
+test-priority-high: install ## Run high priority tests
+	@echo "$(GREEN)--- 🟠 Running high priority tests ---$(NC)"
+	uv run env PYTHONPATH=. pytest -m priority_high -v
 
-format: ## Format code with black and isort
-	@echo "$(GREEN)Formatting code...$(NC)"
-	$(POETRY) run format
+# Show roadmap scenarios (planned features)
+test-roadmap: install ## Show all planned features (roadmap scenarios)
+	@echo "$(GREEN)--- 🗺️  Product Roadmap - Planned Features ---$(NC)"
+	uv run env PYTHONPATH=. pytest -m roadmap -v --collect-only
 
-check: lint test-unit ## Run all checks (lint + unit tests)
+## --------------------------------------
+## Code Quality
+## --------------------------------------
+
+# Lint the code with ruff
+lint: install ## Lint code with ruff
+	@echo "$(GREEN)--- 🧹 Linting code ---$(NC)"
+	uv run ruff check .
+
+# Type check the code with mypy
+typecheck: install ## Type check code with mypy
+	@echo "$(GREEN)--- 🔍 Type checking with mypy ---$(NC)"
+	uv run mypy solr_mcp/
+
+# Format the code with ruff
+format: install ## Format code with ruff
+	@echo "$(GREEN)--- ✨ Formatting code ---$(NC)"
+	uv run ruff format .
+	uv run ruff check --fix --select I .
+
+# Run all checks (format + lint + typecheck + test)
+check: format ## Run all checks (format + lint + typecheck + test)
+	@echo "$(GREEN)--- 🔍 Running all checks ---$(NC)"
+	@echo ""
+	@echo "=== Type Checking ==="
+	@uv run mypy solr_mcp/ || exit 1
+	@echo ""
+	@echo "=== Linting ==="
+	@uv run ruff check . || exit 1
+	@echo ""
+	@echo "=== Unit Tests ==="
+	@uv run env PYTHONPATH=. pytest tests/unit --cov=solr_mcp --cov-report=term-missing || exit 1
+	@echo ""
 	@echo "$(GREEN)✓ All checks passed!$(NC)"
 
-type-check: ## Run type checking with mypy
-	@echo "$(GREEN)Running type checks...$(NC)"
-	$(POETRY) run mypy solr_mcp
+## --------------------------------------
+## Docker Operations
+## --------------------------------------
 
-##@ Docker Operations
-
-docker-build: ## Build Docker images
-	@echo "$(GREEN)Building Docker images...$(NC)"
-	docker-compose build
-
-docker-up: ## Start Docker services (Solr, ZooKeeper)
-	@echo "$(GREEN)Starting Docker services...$(NC)"
+docker-up: ## Start Docker services (Solr, ZooKeeper, Ollama)
+	@echo "$(GREEN)--- 🐳 Starting Docker services ---$(NC)"
 	docker-compose up -d
 	@echo "$(GREEN)✓ Services starting...$(NC)"
 	@echo "$(CYAN)Solr UI: http://localhost:8983$(NC)"
 
 docker-down: ## Stop Docker services
-	@echo "$(YELLOW)Stopping Docker services...$(NC)"
+	@echo "$(YELLOW)--- 🛑 Stopping Docker services ---$(NC)"
 	docker-compose down
 
 docker-logs: ## Show Docker logs (follow mode)
@@ -125,131 +159,157 @@ docker-logs-solr: ## Show Solr logs only
 
 docker-restart: docker-down docker-up ## Restart Docker services
 
-docker-clean: docker-down ## Stop and remove Docker containers, volumes
-	@echo "$(RED)Removing Docker volumes...$(NC)"
+docker-clean: docker-down ## Stop and remove Docker containers and volumes
+	@echo "$(RED)--- 🗑️  Removing Docker volumes ---$(NC)"
 	docker-compose down -v
 	@echo "$(GREEN)✓ Docker environment cleaned$(NC)"
 
-##@ Solr Operations
+## --------------------------------------
+## Solr Operations
+## --------------------------------------
 
 solr-status: ## Check Solr cluster status
-	@echo "$(GREEN)Checking Solr status...$(NC)"
+	@echo "$(GREEN)--- ☁️  Checking Solr status ---$(NC)"
 	@curl -s http://localhost:8983/solr/admin/collections?action=CLUSTERSTATUS | python3 -m json.tool || echo "$(RED)✗ Solr not available$(NC)"
 
 solr-collections: ## List all Solr collections
-	@echo "$(GREEN)Solr collections:$(NC)"
+	@echo "$(GREEN)--- 📚 Solr collections ---$(NC)"
 	@curl -s http://localhost:8983/solr/admin/collections?action=LIST | python3 -m json.tool
 
-solr-create-test: ## Create test collection
-	@echo "$(GREEN)Creating test collection...$(NC)"
-	$(POETRY) run python scripts/create_test_collection.py
+solr-create-test: install ## Create test collection
+	@echo "$(GREEN)--- 🏗️  Creating test collection ---$(NC)"
+	uv run python scripts/create_test_collection.py
 
-solr-create-unified: ## Create unified collection with vectors
-	@echo "$(GREEN)Creating unified collection...$(NC)"
-	$(POETRY) run python scripts/create_unified_collection.py
+solr-create-unified: install ## Create unified collection with vectors
+	@echo "$(GREEN)--- 🏗️  Creating unified collection ---$(NC)"
+	uv run python scripts/create_unified_collection.py
 
-solr-index-test: ## Index test documents
-	@echo "$(GREEN)Indexing test documents...$(NC)"
-	$(POETRY) run python scripts/simple_index.py
+solr-index-test: install ## Index test documents
+	@echo "$(GREEN)--- 📝 Indexing test documents ---$(NC)"
+	uv run python scripts/simple_index.py
 
-solr-index-unified: ## Index documents to unified collection
-	@echo "$(GREEN)Indexing to unified collection...$(NC)"
-	$(POETRY) run python scripts/unified_index.py
+solr-index-unified: install ## Index documents to unified collection
+	@echo "$(GREEN)--- 📝 Indexing to unified collection ---$(NC)"
+	uv run python scripts/unified_index.py
 
-solr-search-demo: ## Run search demo
-	$(POETRY) run python scripts/demo_search.py
-
-##@ Application
+## --------------------------------------
+## Application
+## --------------------------------------
 
 run: server ## Run the MCP server (alias for server)
 
-server: ## Run the Solr MCP server
-	@echo "$(GREEN)Starting Solr MCP server...$(NC)"
-	$(POETRY) run solr-mcp
+server: install ## Run the Solr MCP server
+	@echo "$(GREEN)--- 🚀 Starting Solr MCP server ---$(NC)"
+	uv run solr-mcp
 
-dev: ## Run server in development mode with auto-reload
-	@echo "$(GREEN)Starting Solr MCP server (development mode)...$(NC)"
-	$(POETRY) run uvicorn solr_mcp.server:app --reload --host 0.0.0.0 --port 8080
+dev: install ## Run server in development mode with auto-reload
+	@echo "$(GREEN)--- 🔧 Starting Solr MCP server (development mode) ---$(NC)"
+	uv run uvicorn solr_mcp.server:app --reload --host 0.0.0.0 --port 8080
 
-test-mcp: ## Run MCP test script
-	@echo "$(GREEN)Testing MCP server...$(NC)"
-	$(POETRY) run python scripts/simple_mcp_test.py
+test-mcp: install ## Run MCP test script
+	@echo "$(GREEN)--- 🧪 Testing MCP server ---$(NC)"
+	uv run python scripts/simple_mcp_test.py
 
-##@ Cleanup
+## --------------------------------------
+## Cleanup
+## --------------------------------------
 
 clean: clean-test clean-pyc clean-build ## Remove all build, test, coverage and Python artifacts
 
 clean-test: ## Remove test and coverage artifacts
-	@echo "$(YELLOW)Cleaning test artifacts...$(NC)"
+	@echo "$(YELLOW)--- 🧹 Cleaning test artifacts ---$(NC)"
 	rm -rf .pytest_cache/
 	rm -rf htmlcov/
 	rm -rf .coverage
 	rm -rf coverage.xml
 	rm -rf .mypy_cache/
+	rm -rf .ruff_cache/
 
 clean-pyc: ## Remove Python file artifacts
-	@echo "$(YELLOW)Cleaning Python artifacts...$(NC)"
+	@echo "$(YELLOW)--- 🧹 Cleaning Python artifacts ---$(NC)"
 	find . -type f -name '*.pyc' -delete
 	find . -type f -name '*.pyo' -delete
 	find . -type d -name '__pycache__' -exec rm -rf {} +
 	find . -type d -name '*.egg-info' -exec rm -rf {} +
 
 clean-build: ## Remove build artifacts
-	@echo "$(YELLOW)Cleaning build artifacts...$(NC)"
+	@echo "$(YELLOW)--- 🧹 Cleaning build artifacts ---$(NC)"
 	rm -rf build/
 	rm -rf dist/
 	rm -rf .eggs/
 
 clean-venv: ## Remove virtual environment
-	@echo "$(RED)Removing virtual environment...$(NC)"
-	rm -rf $(VENV)
+	@echo "$(RED)--- 🗑️  Removing virtual environment ---$(NC)"
+	rm -rf $(VENV_DIR)
 
-##@ Release & Publishing
+## --------------------------------------
+## Quick Commands
+## --------------------------------------
 
-version: ## Show current version
-	@$(POETRY) version
-
-version-patch: ## Bump patch version (0.1.0 -> 0.1.1)
-	@echo "$(GREEN)Bumping patch version...$(NC)"
-	$(POETRY) version patch
-	@echo "$(GREEN)New version: $$(poetry version -s)$(NC)"
-
-version-minor: ## Bump minor version (0.1.0 -> 0.2.0)
-	@echo "$(GREEN)Bumping minor version...$(NC)"
-	$(POETRY) version minor
-	@echo "$(GREEN)New version: $$(poetry version -s)$(NC)"
-
-version-major: ## Bump major version (0.1.0 -> 1.0.0)
-	@echo "$(GREEN)Bumping major version...$(NC)"
-	$(POETRY) version major
-	@echo "$(GREEN)New version: $$(poetry version -s)$(NC)"
-
-build: ## Build package
-	@echo "$(GREEN)Building package...$(NC)"
-	$(POETRY) build
-	@echo "$(GREEN)✓ Package built in dist/$(NC)"
-
-publish: build ## Build and publish package to PyPI
-	@echo "$(GREEN)Publishing package...$(NC)"
-	$(POETRY) publish
-
-publish-test: build ## Build and publish to TestPyPI
-	@echo "$(GREEN)Publishing to TestPyPI...$(NC)"
-	$(POETRY) publish -r testpypi
-
-##@ Quick Commands
-
-quick-test: ## Quick test run (unit tests only, no coverage)
-	@$(POETRY) run pytest tests/unit -q
+quick-test: install ## Quick test run (unit tests only, no coverage)
+	@uv run env PYTHONPATH=. pytest tests/unit -q
 
 quick-start: docker-up ## Quick start: bring up Docker and check status
 	@sleep 5
 	@make solr-status
 
-full-setup: install-dev docker-up solr-create-unified solr-index-unified ## Full setup: install, start Docker, create collection, index data
+full-setup: install docker-up solr-create-unified solr-index-unified ## Full setup: install, start Docker, create collection, index data
 	@echo "$(GREEN)✓ Full setup complete!$(NC)"
 	@echo "$(CYAN)Solr UI: http://localhost:8983$(NC)"
 	@echo "$(CYAN)Run 'make server' to start the MCP server$(NC)"
 
-ci: clean install-dev lint test ## Run CI pipeline (lint + test with coverage)
+ci: clean install check ## Run CI pipeline (clean + install + format + lint + typecheck + test)
 	@echo "$(GREEN)✓ CI pipeline completed successfully!$(NC)"
+
+## --------------------------------------
+## Help
+## --------------------------------------
+
+help: ## Display this help message
+	@echo "$(CYAN)Solr MCP - Makefile Commands$(NC)"
+	@echo ""
+	@echo "$(YELLOW)Setup & Installation:$(NC)"
+	@echo "  $(CYAN)make install$(NC)                - Install all dependencies (incl. test) into .venv"
+	@echo "  $(CYAN)make setup$(NC)                  - Full setup: install deps"
+	@echo ""
+	@echo "$(YELLOW)Testing:$(NC)"
+	@echo "  $(CYAN)make test$(NC)                   - Run unit tests with coverage"
+	@echo "  $(CYAN)make test-unit$(NC)              - Run unit tests only (fast, no coverage)"
+	@echo "  $(CYAN)make test-integration$(NC)       - Run integration tests (requires Solr)"
+	@echo "  $(CYAN)make test-all$(NC)               - Run all tests (unit + integration)"
+	@echo "  $(CYAN)make test-cov-html$(NC)          - Generate HTML coverage report"
+	@echo "  $(CYAN)make test-priority-critical$(NC) - Run critical priority tests"
+	@echo "  $(CYAN)make test-priority-high$(NC)     - Run high priority tests"
+	@echo "  $(CYAN)make test-roadmap$(NC)           - Show all planned features"
+	@echo ""
+	@echo "$(YELLOW)Code Quality:$(NC)"
+	@echo "  $(CYAN)make format$(NC)                 - Format code with ruff"
+	@echo "  $(CYAN)make lint$(NC)                   - Lint code with ruff"
+	@echo "  $(CYAN)make typecheck$(NC)              - Type check code with mypy"
+	@echo "  $(CYAN)make check$(NC)                  - Run all checks (format + lint + typecheck + test)"
+	@echo ""
+	@echo "$(YELLOW)Docker Operations:$(NC)"
+	@echo "  $(CYAN)make docker-up$(NC)              - Start Docker services (Solr, ZooKeeper)"
+	@echo "  $(CYAN)make docker-down$(NC)            - Stop Docker services"
+	@echo "  $(CYAN)make docker-logs$(NC)            - Show Docker logs"
+	@echo "  $(CYAN)make docker-clean$(NC)           - Stop and remove containers and volumes"
+	@echo ""
+	@echo "$(YELLOW)Solr Operations:$(NC)"
+	@echo "  $(CYAN)make solr-status$(NC)            - Check Solr cluster status"
+	@echo "  $(CYAN)make solr-collections$(NC)       - List all Solr collections"
+	@echo "  $(CYAN)make solr-create-unified$(NC)    - Create unified collection"
+	@echo "  $(CYAN)make solr-index-unified$(NC)     - Index documents to unified collection"
+	@echo ""
+	@echo "$(YELLOW)Application:$(NC)"
+	@echo "  $(CYAN)make run$(NC)                    - Run the MCP server"
+	@echo "  $(CYAN)make dev$(NC)                    - Run server in development mode (auto-reload)"
+	@echo ""
+	@echo "$(YELLOW)Quick Commands:$(NC)"
+	@echo "  $(CYAN)make quick-test$(NC)             - Quick test run (unit tests, no coverage)"
+	@echo "  $(CYAN)make quick-start$(NC)            - Quick start: Docker + status check"
+	@echo "  $(CYAN)make full-setup$(NC)             - Full setup: install + Docker + collection + index"
+	@echo "  $(CYAN)make ci$(NC)                     - Run CI pipeline (all checks + tests)"
+	@echo ""
+	@echo "$(YELLOW)Cleanup:$(NC)"
+	@echo "  $(CYAN)make clean$(NC)                  - Remove all build, test, and cache files"
+	@echo "  $(CYAN)make clean-venv$(NC)             - Remove virtual environment"

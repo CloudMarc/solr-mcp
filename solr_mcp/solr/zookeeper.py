@@ -1,7 +1,5 @@
 """ZooKeeper-based collection provider."""
 
-from typing import List
-
 import anyio
 from kazoo.client import KazooClient
 from kazoo.exceptions import ConnectionLoss, NoNodeError
@@ -13,7 +11,7 @@ from solr_mcp.solr.interfaces import CollectionProvider
 class ZooKeeperCollectionProvider(CollectionProvider):
     """Collection provider that uses ZooKeeper to discover collections."""
 
-    def __init__(self, hosts: List[str]):
+    def __init__(self, hosts: list[str]):
         """Initialize with ZooKeeper hosts.
 
         Args:
@@ -49,7 +47,7 @@ class ZooKeeperCollectionProvider(CollectionProvider):
             finally:
                 self.zk = None
 
-    async def list_collections(self) -> List[str]:
+    async def list_collections(self) -> list[str]:
         """List available collections from ZooKeeper.
 
         Returns:

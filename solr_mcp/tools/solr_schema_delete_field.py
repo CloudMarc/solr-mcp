@@ -1,6 +1,6 @@
 """Tool for deleting fields from Solr schema."""
 
-from typing import Any, Dict
+from typing import Any
 
 from solr_mcp.tools.tool_decorator import tool
 
@@ -10,7 +10,7 @@ async def execute_schema_delete_field(
     mcp,
     collection: str,
     field_name: str,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Delete a field from a Solr collection's schema.
 
     WARNING: This operation cannot be undone. Ensure the field is not in use

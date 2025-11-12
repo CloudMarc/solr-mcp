@@ -1,12 +1,11 @@
 """Query validation for SolrCloud client."""
 
 import logging
-from typing import Any, Dict, List, Optional
 
 from loguru import logger
-from sqlglot.expressions import Select
 
 from solr_mcp.solr.exceptions import QueryError
+
 
 logger = logging.getLogger(__name__)
 
@@ -22,7 +21,7 @@ class QueryValidator:
         """
         self.field_manager = field_manager
 
-    def validate_fields(self, collection: str, fields: List[str]) -> None:
+    def validate_fields(self, collection: str, fields: list[str]) -> None:
         """Validate that fields exist in the collection.
 
         Args:
@@ -48,7 +47,7 @@ class QueryValidator:
         except Exception as e:
             raise QueryError(f"Field validation error: {str(e)}")
 
-    def validate_sort_fields(self, collection: str, fields: List[str]) -> None:
+    def validate_sort_fields(self, collection: str, fields: list[str]) -> None:
         """Validate that fields are sortable in the collection.
 
         Args:
@@ -63,7 +62,7 @@ class QueryValidator:
         except Exception as e:
             raise QueryError(f"Sort field validation error: {str(e)}")
 
-    def validate_sort(self, sort: Optional[str], collection: str) -> Optional[str]:
+    def validate_sort(self, sort: str | None, collection: str) -> str | None:
         """Validate and normalize sort parameter.
 
         Args:

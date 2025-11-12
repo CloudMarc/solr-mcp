@@ -5,9 +5,9 @@ from unittest.mock import Mock, patch
 import pytest
 
 from solr_mcp.solr.client import SolrClient
-from solr_mcp.solr.interfaces import CollectionProvider, VectorSearchProvider
+from solr_mcp.solr.interfaces import CollectionProvider
 
-from .conftest import MOCK_RESPONSES, MockCollectionProvider, MockVectorProvider
+from .conftest import MockCollectionProvider, MockVectorProvider
 
 
 class TestSolrClient:

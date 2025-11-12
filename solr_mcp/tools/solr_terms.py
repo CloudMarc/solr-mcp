@@ -1,6 +1,6 @@
 """Tool for exploring indexed terms using Solr's Terms Component."""
 
-from typing import Any, Dict, Optional
+from typing import Any
 
 from solr_mcp.tools.tool_decorator import tool
 
@@ -10,12 +10,12 @@ async def execute_terms(
     mcp,
     collection: str,
     field: str,
-    prefix: Optional[str] = None,
-    regex: Optional[str] = None,
+    prefix: str | None = None,
+    regex: str | None = None,
     limit: int = 10,
     min_count: int = 1,
-    max_count: Optional[int] = None,
-) -> Dict[str, Any]:
+    max_count: int | None = None,
+) -> dict[str, Any]:
     """Explore indexed terms in a Solr collection.
 
     This tool uses Solr's Terms Component to retrieve indexed terms from a field.

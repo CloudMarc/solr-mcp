@@ -2,7 +2,7 @@
 
 import json
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 import aiohttp
 import requests
@@ -11,12 +11,12 @@ from loguru import logger
 from solr_mcp.solr.exceptions import (
     DocValuesError,
     QueryError,
-    SolrError,
     SQLExecutionError,
     SQLParseError,
 )
 from solr_mcp.solr.utils.formatting import format_sql_response
 from solr_mcp.solr.vector import VectorSearchResults
+
 
 logger = logging.getLogger(__name__)
 
@@ -32,7 +32,7 @@ class QueryExecutor:
         """
         self.base_url = base_url.rstrip("/")
 
-    async def execute_select_query(self, query: str, collection: str) -> Dict[str, Any]:
+    async def execute_select_query(self, query: str, collection: str) -> dict[str, Any]:
         """Execute a SQL SELECT query against Solr using the SQL interface.
 
         Args:
@@ -97,11 +97,11 @@ class QueryExecutor:
     async def execute_vector_select_query(
         self,
         query: str,
-        vector: List[float],
+        vector: list[float],
         field: str,
         collection: str,
         vector_results: VectorSearchResults,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Execute SQL query filtered by vector similarity search.
 
         Args:

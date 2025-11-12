@@ -5,7 +5,6 @@ import functools
 import logging
 import os
 import sys
-from typing import List
 
 from mcp.server import Server
 from mcp.server.fastmcp import FastMCP
@@ -18,6 +17,7 @@ from solr_mcp.solr.client import SolrClient
 from solr_mcp.solr.config import SolrConfig
 from solr_mcp.tools import TOOLS_DEFINITION
 
+
 logger = logging.getLogger(__name__)
 
 
@@ -28,7 +28,7 @@ class SolrMCPServer:
         self,
         mcp_port: int = int(os.getenv("MCP_PORT", 8081)),
         solr_base_url: str = os.getenv("SOLR_BASE_URL", "http://localhost:8983/solr"),
-        zookeeper_hosts: List[str] = os.getenv(
+        zookeeper_hosts: list[str] = os.getenv(
             "ZOOKEEPER_HOSTS", "localhost:2181"
         ).split(","),
         connection_timeout: int = int(os.getenv("CONNECTION_TIMEOUT", 10)),
@@ -206,7 +206,7 @@ def main() -> None:
     if args.transport == "stdio":
         server.run()
     else:
-        mcp_server = server.mcp._mcp_server  # noqa: WPS437
+        mcp_server = server.mcp._mcp_server
         starlette_app = create_starlette_app(mcp_server, debug=True)
         import uvicorn
 

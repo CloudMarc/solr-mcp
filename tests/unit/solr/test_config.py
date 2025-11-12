@@ -1,21 +1,18 @@
 """Tests for solr_mcp.solr.config module."""
 
 import json
-import os
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any
 from unittest.mock import mock_open, patch
 
-import pydantic
 import pytest
-from pydantic import ValidationError
 
 from solr_mcp.solr.config import SolrConfig
 from solr_mcp.solr.exceptions import ConfigurationError
 
 
 @pytest.fixture
-def valid_config_dict() -> Dict[str, Any]:
+def valid_config_dict() -> dict[str, Any]:
     """Create a valid configuration dictionary."""
     return {
         "solr_base_url": "http://localhost:8983/solr",
@@ -25,7 +22,7 @@ def valid_config_dict() -> Dict[str, Any]:
 
 
 @pytest.fixture
-def temp_config_file(tmp_path: Path, valid_config_dict: Dict[str, Any]) -> Path:
+def temp_config_file(tmp_path: Path, valid_config_dict: dict[str, Any]) -> Path:
     """Create a temporary configuration file."""
     config_file = tmp_path / "config.json"
     with open(config_file, "w") as f:

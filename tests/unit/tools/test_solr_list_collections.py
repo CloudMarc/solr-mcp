@@ -1,9 +1,8 @@
 """Tests for Solr list collections tool."""
 
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
-from mcp.server.fastmcp.exceptions import ToolError
 
 from solr_mcp.server import SolrMCPServer
 from solr_mcp.tools.solr_list_collections import execute_list_collections

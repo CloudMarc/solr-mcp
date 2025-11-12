@@ -1,6 +1,6 @@
 """Tool for getting details of a specific schema field."""
 
-from typing import Any, Dict
+from typing import Any
 
 from solr_mcp.tools.tool_decorator import tool
 
@@ -10,7 +10,7 @@ async def execute_schema_get_field(
     mcp,
     collection: str,
     field_name: str,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Get detailed information about a specific field in the schema.
 
     Args:

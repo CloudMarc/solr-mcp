@@ -1,6 +1,6 @@
 """Tool for adding documents to Solr."""
 
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from solr_mcp.tools.tool_decorator import tool
 
@@ -9,11 +9,11 @@ from solr_mcp.tools.tool_decorator import tool
 async def execute_add_documents(
     mcp,
     collection: str,
-    documents: List[Dict[str, Any]],
+    documents: list[dict[str, Any]],
     commit: bool = True,
-    commit_within: Optional[int] = None,
+    commit_within: int | None = None,
     overwrite: bool = True,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Add or update documents in a Solr collection.
 
     Adds one or more documents to the specified Solr collection. Documents with

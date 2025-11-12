@@ -1,9 +1,5 @@
 """Tests for base tool decorator."""
 
-from typing import Dict, List
-
-import pytest
-
 from solr_mcp.tools.base import tool
 
 
@@ -47,11 +43,11 @@ def test_tool_decorator_result_wrapping():
         return "test"
 
     @tool()
-    def dict_tool() -> Dict[str, str]:
+    def dict_tool() -> dict[str, str]:
         return {"key": "value"}
 
     @tool()
-    def list_tool() -> List[Dict[str, str]]:
+    def list_tool() -> list[dict[str, str]]:
         return [{"type": "text", "text": "test"}]
 
     # String result should be wrapped

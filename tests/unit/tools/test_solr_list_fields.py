@@ -5,6 +5,7 @@ import pytest
 from solr_mcp.solr.exceptions import SolrError
 from solr_mcp.tools.solr_list_fields import execute_list_fields
 
+
 # Sample field data for testing
 FIELD_DATA = {
     "fields": [

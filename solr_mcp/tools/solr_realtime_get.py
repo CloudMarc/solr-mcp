@@ -1,6 +1,6 @@
 """Tool for real-time get of Solr documents."""
 
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from solr_mcp.tools.tool_decorator import tool
 
@@ -9,9 +9,9 @@ from solr_mcp.tools.tool_decorator import tool
 async def execute_realtime_get(
     mcp,
     collection: str,
-    doc_ids: List[str],
-    fl: Optional[str] = None,
-) -> Dict[str, Any]:
+    doc_ids: list[str],
+    fl: str | None = None,
+) -> dict[str, Any]:
     """Get documents in real-time, including uncommitted changes.
 
     Real-Time Get (RTG) retrieves the latest version of documents immediately,

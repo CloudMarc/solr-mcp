@@ -1,7 +1,7 @@
 """Unit tests for Solr client interfaces."""
 
 from abc import ABC
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 import pytest
 
@@ -46,7 +46,7 @@ async def test_collection_provider_implementation():
     """Test that a complete implementation can be instantiated."""
 
     class ValidProvider(CollectionProvider):
-        async def list_collections(self) -> List[str]:
+        async def list_collections(self) -> list[str]:
             return ["collection1"]
 
         async def collection_exists(self, collection: str) -> bool:
@@ -85,10 +85,10 @@ def test_vector_search_provider_requires_all_methods():
         def execute_vector_search(
             self,
             client: Any,
-            vector: List[float],
+            vector: list[float],
             field: str,
-            top_k: Optional[int] = None,
-        ) -> Dict[str, Any]:
+            top_k: int | None = None,
+        ) -> dict[str, Any]:
             return {"response": {"docs": []}}
 
     with pytest.raises(TypeError) as exc_info:
@@ -106,13 +106,13 @@ def test_vector_search_provider_implementation():
         def execute_vector_search(
             self,
             client: Any,
-            vector: List[float],
+            vector: list[float],
             field: str,
-            top_k: Optional[int] = None,
-        ) -> Dict[str, Any]:
+            top_k: int | None = None,
+        ) -> dict[str, Any]:
             return {"response": {"docs": []}}
 
-        async def get_vector(self, text: str) -> List[float]:
+        async def get_vector(self, text: str) -> list[float]:
             return [0.1, 0.2, 0.3]
 
     provider = ValidProvider()
@@ -130,13 +130,13 @@ async def test_vector_search_provider_async_method():
         def execute_vector_search(
             self,
             client: Any,
-            vector: List[float],
+            vector: list[float],
             field: str,
-            top_k: Optional[int] = None,
-        ) -> Dict[str, Any]:
+            top_k: int | None = None,
+        ) -> dict[str, Any]:
             return {"response": {"docs": []}}
 
-        async def get_vector(self, text: str) -> List[float]:
+        async def get_vector(self, text: str) -> list[float]:
             return [0.1, 0.2, 0.3]
 
     provider = ValidProvider()

@@ -1,7 +1,5 @@
 """Test tools initialization."""
 
-import pytest
-
 from solr_mcp.tools import (
     TOOLS_DEFINITION,
     execute_add_documents,

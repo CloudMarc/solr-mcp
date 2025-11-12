@@ -3,22 +3,22 @@
 These tests interact directly with the Solr client, bypassing the MCP server.
 """
 
-import asyncio
 import logging
 import os
 
 # Add the project root to the path
 import sys
-import time
 
 import pytest
 import pytest_asyncio
+
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
 
 from solr_mcp.solr.client import SolrClient
 from solr_mcp.solr.config import SolrConfig
 from solr_mcp.vector_provider import OllamaVectorProvider
+
 
 # Set up logging
 logger = logging.getLogger(__name__)
@@ -164,9 +164,9 @@ async def test_hybrid_search(solr_client):
         and len(result_dict["result-set"]["docs"]) > 0
         and result_dict["result-set"]["docs"][0].get("EOF") is not True
     ):
-        assert (
-            "score" in result_dict["result-set"]["docs"][0]
-        ), "Results should have scores"
+        assert "score" in result_dict["result-set"]["docs"][0], (
+            "Results should have scores"
+        )
 
 
 @pytest.mark.asyncio

@@ -1,6 +1,6 @@
 """Tool for listing schema fields with full details."""
 
-from typing import Any, Dict
+from typing import Any
 
 from solr_mcp.tools.tool_decorator import tool
 
@@ -9,7 +9,7 @@ from solr_mcp.tools.tool_decorator import tool
 async def execute_schema_list_fields(
     mcp,
     collection: str,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """List all fields in a collection's schema with full details.
 
     This tool provides comprehensive schema information including field types,

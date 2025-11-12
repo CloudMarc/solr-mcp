@@ -1,10 +1,8 @@
 import functools
 import inspect
+from collections.abc import Callable
 from typing import (
     Any,
-    Callable,
-    Dict,
-    List,
     Literal,
     TypedDict,
     TypeVar,
@@ -12,6 +10,7 @@ from typing import (
     get_args,
     get_origin,
 )
+
 
 F = TypeVar("F", bound=Callable[..., Any])
 
@@ -42,7 +41,7 @@ def tool() -> Callable:
             """Wrap function call."""
             try:
                 return await func(*args, **kwargs)
-            except Exception as e:
+            except Exception:
                 # Re-raise the exception to be handled by the caller
                 raise
 
@@ -70,7 +69,7 @@ def tool() -> Callable:
 class ToolSchema(TypedDict):
     name: str
     description: str
-    inputSchema: Dict[str, Any]
+    inputSchema: dict[str, Any]
 
 
 def get_schema(func: Callable) -> ToolSchema:
@@ -125,7 +124,7 @@ def get_schema(func: Callable) -> ToolSchema:
 
         is_optional = False
 
-        if origin is list or origin is List:
+        if origin is list or origin is list:
             item_type = args[0] if args else Any
             item_schema = type_map.get(item_type, {"type": "string"})
             param_schema = {"type": "array", "items": item_schema}

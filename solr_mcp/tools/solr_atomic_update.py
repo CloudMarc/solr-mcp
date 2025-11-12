@@ -1,6 +1,6 @@
 """Tool for atomic field updates in Solr documents."""
 
-from typing import Any, Dict, Optional
+from typing import Any
 
 from solr_mcp.tools.tool_decorator import tool
 
@@ -10,11 +10,11 @@ async def execute_atomic_update(
     mcp,
     collection: str,
     doc_id: str,
-    updates: Dict[str, Dict[str, Any]],
-    version: Optional[int] = None,
+    updates: dict[str, dict[str, Any]],
+    version: int | None = None,
     commit: bool = False,
-    commitWithin: Optional[int] = None,
-) -> Dict[str, Any]:
+    commitWithin: int | None = None,
+) -> dict[str, Any]:
     """Atomically update specific fields in a Solr document.
 
     Atomic updates allow you to update individual fields without reindexing

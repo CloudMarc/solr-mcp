@@ -1,10 +1,9 @@
 """Tests for solr_mcp.solr.response module."""
 
 import json
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 import pysolr
-import pytest
 
 from solr_mcp.solr.response import ResponseFormatter
 

@@ -1,6 +1,6 @@
 """Tool for committing changes to Solr."""
 
-from typing import Any, Dict
+from typing import Any
 
 from solr_mcp.tools.tool_decorator import tool
 
@@ -12,7 +12,7 @@ async def execute_commit(
     soft: bool = False,
     wait_searcher: bool = True,
     expunge_deletes: bool = False,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Commit pending changes to a Solr collection.
 
     Makes all recently indexed documents searchable by committing the transaction.

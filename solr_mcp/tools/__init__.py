@@ -22,6 +22,7 @@ from .solr_terms import execute_terms
 from .solr_vector_select import execute_vector_select_query
 from .tool_decorator import get_schema, tool
 
+
 __all__ = [
     "execute_list_collections",
     "execute_list_fields",

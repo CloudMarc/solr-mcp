@@ -1,18 +1,16 @@
 """Query builder for Solr."""
 
 import logging
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 from loguru import logger
-from sqlglot import exp, parse_one
+from sqlglot import exp
 from sqlglot.expressions import (
     EQ,
     Binary,
     Column,
-    From,
     Identifier,
     Literal,
-    Ordered,
     Select,
     Star,
     Where,
@@ -21,6 +19,7 @@ from sqlglot.expressions import (
 from solr_mcp.solr.exceptions import QueryError
 from solr_mcp.solr.query.parser import QueryParser
 from solr_mcp.solr.schema.fields import FieldManager
+
 
 logger = logging.getLogger(__name__)
 
@@ -84,7 +83,7 @@ class QueryBuilder:
 
         return ast, collection, fields, sort_fields
 
-    def parse_and_validate_select(self, query: str) -> Tuple[Select, str, List[str]]:
+    def parse_and_validate_select(self, query: str) -> tuple[Select, str, list[str]]:
         """Parse and validate a SELECT query.
 
         Args:
@@ -145,7 +144,7 @@ class QueryBuilder:
         except Exception as e:
             raise QueryError(f"Invalid sort specification: {str(e)}")
 
-    def extract_sort_fields(self, sort_spec: str) -> List[str]:
+    def extract_sort_fields(self, sort_spec: str) -> list[str]:
         """Extract sort fields from specification.
 
         Args:
@@ -207,7 +206,7 @@ class QueryBuilder:
                 f"Unsupported expression type '{type(where_expr).__name__}' in WHERE clause"
             )
 
-    def build_solr_query(self, ast: Select) -> Dict[str, Any]:
+    def build_solr_query(self, ast: Select) -> dict[str, Any]:
         """Build Solr query from AST.
 
         Args:
@@ -253,7 +252,7 @@ class QueryBuilder:
 
         return params
 
-    def build_vector_query(self, base_query: str, doc_ids: List[str]) -> Dict[str, Any]:
+    def build_vector_query(self, base_query: str, doc_ids: list[str]) -> dict[str, Any]:
         """Build vector query from base query and document IDs.
 
         Args:

@@ -1,10 +1,8 @@
 """Vector search fixtures for unit tests."""
 
-import json
-from unittest.mock import MagicMock, Mock, patch
+from unittest.mock import Mock
 
 import pytest
-import requests
 
 from solr_mcp.solr.interfaces import VectorSearchProvider
 from solr_mcp.solr.vector.manager import VectorManager
