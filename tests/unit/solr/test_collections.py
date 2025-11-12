@@ -1,10 +1,14 @@
 """Unit tests for collection providers."""
 
-import pytest
 from unittest.mock import MagicMock, Mock, patch
+
+import pytest
 from kazoo.exceptions import ConnectionLoss, NoNodeError
 
-from solr_mcp.solr.collections import HttpCollectionProvider, ZooKeeperCollectionProvider
+from solr_mcp.solr.collections import (
+    HttpCollectionProvider,
+    ZooKeeperCollectionProvider,
+)
 from solr_mcp.solr.exceptions import ConnectionError, SolrError
 
 
@@ -27,7 +31,9 @@ class TestHttpCollectionProvider:
         """Test successful collection listing."""
         mock_response = Mock()
         mock_response.status_code = 200
-        mock_response.json.return_value = {"collections": ["collection1", "collection2"]}
+        mock_response.json.return_value = {
+            "collections": ["collection1", "collection2"]
+        }
         mock_get.return_value = mock_response
 
         provider = HttpCollectionProvider("http://localhost:8983/solr")
@@ -62,7 +68,7 @@ class TestHttpCollectionProvider:
         mock_get.return_value = mock_response
 
         provider = HttpCollectionProvider("http://localhost:8983/solr")
-        
+
         with pytest.raises(SolrError, match="Failed to list collections"):
             await provider.list_collections()
 
@@ -73,7 +79,7 @@ class TestHttpCollectionProvider:
         mock_get.side_effect = Exception("Network error")
 
         provider = HttpCollectionProvider("http://localhost:8983/solr")
-        
+
         with pytest.raises(SolrError, match="Failed to list collections"):
             await provider.list_collections()
 
@@ -83,7 +89,9 @@ class TestHttpCollectionProvider:
         """Test checking if collection exists (true case)."""
         mock_response = Mock()
         mock_response.status_code = 200
-        mock_response.json.return_value = {"collections": ["collection1", "collection2"]}
+        mock_response.json.return_value = {
+            "collections": ["collection1", "collection2"]
+        }
         mock_get.return_value = mock_response
 
         provider = HttpCollectionProvider("http://localhost:8983/solr")
@@ -97,7 +105,9 @@ class TestHttpCollectionProvider:
         """Test checking if collection exists (false case)."""
         mock_response = Mock()
         mock_response.status_code = 200
-        mock_response.json.return_value = {"collections": ["collection1", "collection2"]}
+        mock_response.json.return_value = {
+            "collections": ["collection1", "collection2"]
+        }
         mock_get.return_value = mock_response
 
         provider = HttpCollectionProvider("http://localhost:8983/solr")
@@ -112,7 +122,7 @@ class TestHttpCollectionProvider:
         mock_get.side_effect = Exception("Network error")
 
         provider = HttpCollectionProvider("http://localhost:8983/solr")
-        
+
         with pytest.raises(SolrError, match="Failed to check if collection exists"):
             await provider.collection_exists("collection1")
 
@@ -172,10 +182,14 @@ class TestZooKeeperCollectionProvider:
         mock_zk.exists.return_value = True
         mock_kazoo_class.return_value = mock_zk
 
-        provider = ZooKeeperCollectionProvider(["host1:2181", "host2:2181", "host3:2181"])
+        provider = ZooKeeperCollectionProvider(
+            ["host1:2181", "host2:2181", "host3:2181"]
+        )
 
         assert provider.hosts == ["host1:2181", "host2:2181", "host3:2181"]
-        mock_kazoo_class.assert_called_once_with(hosts="host1:2181,host2:2181,host3:2181")
+        mock_kazoo_class.assert_called_once_with(
+            hosts="host1:2181,host2:2181,host3:2181"
+        )
 
     @patch("solr_mcp.solr.collections.KazooClient")
     def test_cleanup(self, mock_kazoo_class):
@@ -252,7 +266,9 @@ class TestZooKeeperCollectionProvider:
     @pytest.mark.asyncio
     @patch("solr_mcp.solr.collections.KazooClient")
     @patch("solr_mcp.solr.collections.anyio.to_thread.run_sync")
-    async def test_list_collections_connection_loss(self, mock_run_sync, mock_kazoo_class):
+    async def test_list_collections_connection_loss(
+        self, mock_run_sync, mock_kazoo_class
+    ):
         """Test handling connection loss during listing."""
         mock_zk = MagicMock()
         mock_zk.exists.return_value = True
@@ -267,7 +283,9 @@ class TestZooKeeperCollectionProvider:
     @pytest.mark.asyncio
     @patch("solr_mcp.solr.collections.KazooClient")
     @patch("solr_mcp.solr.collections.anyio.to_thread.run_sync")
-    async def test_list_collections_generic_error(self, mock_run_sync, mock_kazoo_class):
+    async def test_list_collections_generic_error(
+        self, mock_run_sync, mock_kazoo_class
+    ):
         """Test handling generic errors during listing."""
         mock_zk = MagicMock()
         mock_zk.exists.return_value = True
@@ -293,7 +311,9 @@ class TestZooKeeperCollectionProvider:
         exists = await provider.collection_exists("collection1")
 
         assert exists is True
-        mock_run_sync.assert_called_once_with(mock_zk.exists, "/collections/collection1")
+        mock_run_sync.assert_called_once_with(
+            mock_zk.exists, "/collections/collection1"
+        )
 
     @pytest.mark.asyncio
     @patch("solr_mcp.solr.collections.KazooClient")
@@ -327,7 +347,9 @@ class TestZooKeeperCollectionProvider:
     @pytest.mark.asyncio
     @patch("solr_mcp.solr.collections.KazooClient")
     @patch("solr_mcp.solr.collections.anyio.to_thread.run_sync")
-    async def test_collection_exists_connection_loss(self, mock_run_sync, mock_kazoo_class):
+    async def test_collection_exists_connection_loss(
+        self, mock_run_sync, mock_kazoo_class
+    ):
         """Test handling connection loss when checking existence."""
         mock_zk = MagicMock()
         mock_zk.exists.return_value = True
@@ -342,7 +364,9 @@ class TestZooKeeperCollectionProvider:
     @pytest.mark.asyncio
     @patch("solr_mcp.solr.collections.KazooClient")
     @patch("solr_mcp.solr.collections.anyio.to_thread.run_sync")
-    async def test_collection_exists_generic_error(self, mock_run_sync, mock_kazoo_class):
+    async def test_collection_exists_generic_error(
+        self, mock_run_sync, mock_kazoo_class
+    ):
         """Test handling generic errors when checking existence."""
         mock_zk = MagicMock()
         mock_zk.exists.return_value = True
@@ -351,5 +375,7 @@ class TestZooKeeperCollectionProvider:
 
         provider = ZooKeeperCollectionProvider(["localhost:2181"])
 
-        with pytest.raises(ConnectionError, match="Error checking collection existence"):
+        with pytest.raises(
+            ConnectionError, match="Error checking collection existence"
+        ):
             await provider.collection_exists("collection1")

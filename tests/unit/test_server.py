@@ -1,8 +1,9 @@
 """Unit tests for SolrMCPServer."""
 
-import pytest
-from unittest.mock import MagicMock, Mock, patch, AsyncMock
 import sys
+from unittest.mock import AsyncMock, MagicMock, Mock, patch
+
+import pytest
 
 from solr_mcp.server import SolrMCPServer, create_starlette_app, main
 
@@ -16,7 +17,7 @@ class TestSolrMCPServer:
         """Test initialization with default values."""
         with patch.dict("os.environ", {}, clear=True):
             server = SolrMCPServer()
-            
+
             assert server.port == 8081
             assert server.stdio is False
             assert server.config.solr_base_url == "http://localhost:8983/solr"
@@ -33,7 +34,7 @@ class TestSolrMCPServer:
             connection_timeout=30,
             stdio=True,
         )
-        
+
         assert server.port == 9000
         assert server.stdio is True
         assert server.config.solr_base_url == "http://custom:8983/solr"
@@ -42,7 +43,9 @@ class TestSolrMCPServer:
 
     @patch("solr_mcp.server.SolrClient")
     @patch("solr_mcp.server.FastMCP")
-    def test_init_with_custom_values_overrides_defaults(self, mock_fastmcp, mock_solr_client):
+    def test_init_with_custom_values_overrides_defaults(
+        self, mock_fastmcp, mock_solr_client
+    ):
         """Test initialization with custom values (which override environment defaults)."""
         # Since os.getenv is evaluated at function definition time, we can't mock it
         # Instead, test that explicit values work
@@ -50,9 +53,9 @@ class TestSolrMCPServer:
             mcp_port=9999,
             solr_base_url="http://custom:8983/solr",
             zookeeper_hosts=["custom1:2181", "custom2:2181"],
-            connection_timeout=60
+            connection_timeout=60,
         )
-        
+
         assert server.port == 9999
         assert server.config.solr_base_url == "http://custom:8983/solr"
         assert server.config.zookeeper_hosts == ["custom1:2181", "custom2:2181"]
@@ -61,12 +64,14 @@ class TestSolrMCPServer:
     @patch("solr_mcp.server.SolrClient")
     @patch("solr_mcp.server.FastMCP")
     @patch("sys.exit")
-    def test_setup_server_connection_error(self, mock_exit, mock_fastmcp, mock_solr_client):
+    def test_setup_server_connection_error(
+        self, mock_exit, mock_fastmcp, mock_solr_client
+    ):
         """Test that connection errors cause sys.exit."""
         mock_solr_client.side_effect = Exception("Connection failed")
-        
+
         SolrMCPServer()
-        
+
         mock_exit.assert_called_once_with(1)
 
     @patch("solr_mcp.server.SolrClient")
@@ -74,7 +79,7 @@ class TestSolrMCPServer:
     def test_connect_to_solr(self, mock_fastmcp, mock_solr_client):
         """Test Solr client connection."""
         server = SolrMCPServer()
-        
+
         mock_solr_client.assert_called_once()
         assert server.solr_client is not None
 
@@ -84,34 +89,38 @@ class TestSolrMCPServer:
         """Test that tools are registered."""
         mock_mcp_instance = MagicMock()
         mock_fastmcp.return_value = mock_mcp_instance
-        
+
         server = SolrMCPServer()
-        
+
         # Tool decorator should be called
         assert mock_mcp_instance.tool.called
 
     @patch("solr_mcp.server.SolrClient")
     @patch("solr_mcp.server.FastMCP")
-    def test_transform_tool_params_with_mcp_string(self, mock_fastmcp, mock_solr_client):
+    def test_transform_tool_params_with_mcp_string(
+        self, mock_fastmcp, mock_solr_client
+    ):
         """Test parameter transformation when mcp is a string."""
         server = SolrMCPServer()
-        
+
         params = {"mcp": "server_name", "other_param": "value"}
         result = server._transform_tool_params("test_tool", params)
-        
+
         assert result["mcp"] is server
         assert result["other_param"] == "value"
 
     @patch("solr_mcp.server.SolrClient")
     @patch("solr_mcp.server.FastMCP")
-    def test_transform_tool_params_with_mcp_object(self, mock_fastmcp, mock_solr_client):
+    def test_transform_tool_params_with_mcp_object(
+        self, mock_fastmcp, mock_solr_client
+    ):
         """Test parameter transformation when mcp is already an object."""
         server = SolrMCPServer()
         mock_server = MagicMock()
-        
+
         params = {"mcp": mock_server, "other_param": "value"}
         result = server._transform_tool_params("test_tool", params)
-        
+
         assert result["mcp"] is mock_server
         assert result["other_param"] == "value"
 
@@ -120,10 +129,10 @@ class TestSolrMCPServer:
     def test_transform_tool_params_without_mcp(self, mock_fastmcp, mock_solr_client):
         """Test parameter transformation without mcp parameter."""
         server = SolrMCPServer()
-        
+
         params = {"other_param": "value"}
         result = server._transform_tool_params("test_tool", params)
-        
+
         assert "mcp" not in result
         assert result["other_param"] == "value"
 
@@ -133,21 +142,21 @@ class TestSolrMCPServer:
     async def test_wrap_tool(self, mock_fastmcp, mock_solr_client):
         """Test tool wrapper functionality."""
         server = SolrMCPServer()
-        
+
         # Create a mock tool
         async def mock_tool(arg1, mcp=None):
             return f"result: {arg1}, mcp: {mcp}"
-        
+
         mock_tool.__name__ = "test_tool"
         mock_tool.__doc__ = "Test tool description"
-        
+
         wrapped = server._wrap_tool(mock_tool)
-        
+
         # Test that wrapper has correct metadata
         assert wrapped._is_tool is True
         assert wrapped._tool_name == "test_tool"
         assert wrapped._tool_description == "Test tool description"
-        
+
         # Test that wrapper transforms params
         result = await wrapped(arg1="test", mcp="server_name")
         assert "mcp:" in result
@@ -158,10 +167,10 @@ class TestSolrMCPServer:
         """Test running server in stdio mode."""
         mock_mcp_instance = MagicMock()
         mock_fastmcp.return_value = mock_mcp_instance
-        
+
         server = SolrMCPServer(stdio=True)
         server.run()
-        
+
         mock_mcp_instance.run.assert_called_once_with("stdio")
 
     @patch("solr_mcp.server.SolrClient")
@@ -170,10 +179,10 @@ class TestSolrMCPServer:
         """Test running server in SSE mode."""
         mock_mcp_instance = MagicMock()
         mock_fastmcp.return_value = mock_mcp_instance
-        
+
         server = SolrMCPServer(stdio=False)
         server.run()
-        
+
         mock_mcp_instance.run.assert_called_once_with("sse")
 
     @pytest.mark.asyncio
@@ -184,15 +193,15 @@ class TestSolrMCPServer:
         mock_solr_instance = AsyncMock()
         mock_solr_instance.close = AsyncMock()
         mock_solr_client.return_value = mock_solr_instance
-        
+
         mock_mcp_instance = MagicMock()
         mock_mcp_instance.close = AsyncMock()
         mock_mcp_instance.tool = MagicMock(return_value=MagicMock(return_value=None))
         mock_fastmcp.return_value = mock_mcp_instance
-        
+
         server = SolrMCPServer()
         await server.close()
-        
+
         mock_solr_instance.close.assert_called_once()
         mock_mcp_instance.close.assert_called_once()
 
@@ -205,15 +214,15 @@ class TestSolrMCPServer:
         # Ensure the mock doesn't have a close attribute
         del mock_solr_instance.close
         mock_solr_client.return_value = mock_solr_instance
-        
+
         mock_mcp_instance = MagicMock()
         mock_mcp_instance.close = AsyncMock()  # MCP should still have async close
         mock_mcp_instance.tool = MagicMock(return_value=MagicMock(return_value=None))
         mock_fastmcp.return_value = mock_mcp_instance
-        
+
         server = SolrMCPServer()
         await server.close()  # Should not raise
-        
+
         # MCP close should still be called
         mock_mcp_instance.close.assert_called_once()
 
@@ -226,12 +235,12 @@ class TestCreateStarletteApp:
     def test_create_starlette_app(self, mock_starlette, mock_sse_transport):
         """Test Starlette app creation."""
         mock_server = MagicMock()
-        
+
         app = create_starlette_app(mock_server, debug=True)
-        
+
         mock_sse_transport.assert_called_once_with("/messages/")
         mock_starlette.assert_called_once()
-        
+
         # Check that routes were created
         call_kwargs = mock_starlette.call_args[1]
         assert call_kwargs["debug"] is True
@@ -240,12 +249,14 @@ class TestCreateStarletteApp:
 
     @patch("solr_mcp.server.SseServerTransport")
     @patch("solr_mcp.server.Starlette")
-    def test_create_starlette_app_default_debug(self, mock_starlette, mock_sse_transport):
+    def test_create_starlette_app_default_debug(
+        self, mock_starlette, mock_sse_transport
+    ):
         """Test Starlette app creation with default debug."""
         mock_server = MagicMock()
-        
+
         app = create_starlette_app(mock_server)
-        
+
         call_kwargs = mock_starlette.call_args[1]
         assert call_kwargs["debug"] is False
 
@@ -261,11 +272,11 @@ class TestMain:
         mock_server_instance.mcp = MagicMock()
         mock_server_instance.mcp._mcp_server = MagicMock()
         mock_server_class.return_value = mock_server_instance
-        
+
         with patch.dict("os.environ", {}, clear=True):
             with patch("uvicorn.run") as mock_uvicorn:
                 main()
-                
+
                 # Check server was created with defaults
                 mock_server_class.assert_called_once()
                 call_kwargs = mock_server_class.call_args[1]
@@ -294,9 +305,9 @@ class TestMain:
         """Test main with custom arguments."""
         mock_server_instance = MagicMock()
         mock_server_class.return_value = mock_server_instance
-        
+
         main()
-        
+
         mock_server_class.assert_called_once()
         call_kwargs = mock_server_class.call_args[1]
         assert call_kwargs["mcp_port"] == 9000
@@ -304,29 +315,32 @@ class TestMain:
         assert call_kwargs["zookeeper_hosts"] == ["zk1:2181", "zk2:2181"]
         assert call_kwargs["connection_timeout"] == 30
         assert call_kwargs["stdio"] is True
-        
+
         # In stdio mode, server.run() should be called
         mock_server_instance.run.assert_called_once()
 
     @patch("solr_mcp.server.SolrMCPServer")
-    @patch("sys.argv", ["solr-mcp", "--transport", "sse", "--host", "localhost", "--port", "9090"])
+    @patch(
+        "sys.argv",
+        ["solr-mcp", "--transport", "sse", "--host", "localhost", "--port", "9090"],
+    )
     def test_main_sse_mode(self, mock_server_class):
         """Test main with SSE transport mode."""
         mock_server_instance = MagicMock()
         mock_server_instance.mcp = MagicMock()
         mock_server_instance.mcp._mcp_server = MagicMock()
         mock_server_class.return_value = mock_server_instance
-        
+
         with patch("solr_mcp.server.create_starlette_app") as mock_create_app:
             with patch("uvicorn.run") as mock_uvicorn:
                 main()
-                
+
                 # Server should be created
                 mock_server_class.assert_called_once()
-                
+
                 # Starlette app should be created
                 mock_create_app.assert_called_once()
-                
+
                 # Uvicorn should run the app
                 mock_uvicorn.assert_called_once()
                 call_args = mock_uvicorn.call_args[1]
@@ -341,14 +355,15 @@ class TestMain:
         mock_server_instance.mcp = MagicMock()
         mock_server_instance.mcp._mcp_server = MagicMock()
         mock_server_class.return_value = mock_server_instance
-        
+
         with patch("solr_mcp.server.logging.basicConfig") as mock_logging:
             with patch("uvicorn.run"):
                 main()
-                
+
                 # Check logging was configured
                 mock_logging.assert_called_once()
                 import logging
+
                 assert mock_logging.call_args[1]["level"] == logging.DEBUG
 
     @patch("solr_mcp.server.SolrMCPServer")
@@ -359,10 +374,11 @@ class TestMain:
         mock_server_instance.mcp = MagicMock()
         mock_server_instance.mcp._mcp_server = MagicMock()
         mock_server_class.return_value = mock_server_instance
-        
+
         with patch("solr_mcp.server.logging.basicConfig") as mock_logging:
             with patch("uvicorn.run"):
                 main()
-                
+
                 import logging
+
                 assert mock_logging.call_args[1]["level"] == logging.ERROR

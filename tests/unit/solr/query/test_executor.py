@@ -97,9 +97,14 @@ class TestExecuteSelectQuery:
             # Verify request was made correctly
             mock_post.assert_called_once()
             call_args = mock_post.call_args
-            assert call_args[0][0] == "http://localhost:8983/solr/test_collection/sql?aggregationMode=facet"
+            assert (
+                call_args[0][0]
+                == "http://localhost:8983/solr/test_collection/sql?aggregationMode=facet"
+            )
             assert call_args[1]["data"] == {"stmt": "SELECT * FROM test_collection"}
-            assert call_args[1]["headers"] == {"Content-Type": "application/x-www-form-urlencoded"}
+            assert call_args[1]["headers"] == {
+                "Content-Type": "application/x-www-form-urlencoded"
+            }
 
             # Verify result
             assert "result-set" in result
@@ -179,9 +184,7 @@ class TestExecuteSelectQuery:
 
         with patch("requests.post", return_value=mock_response):
             with pytest.raises(SQLParseError) as exc_info:
-                await executor.execute_select_query(
-                    "INVALID SQL", "test_collection"
-                )
+                await executor.execute_select_query("INVALID SQL", "test_collection")
             assert "parse failed" in str(exc_info.value)
             assert exc_info.value.response_time == 10
             assert exc_info.value.error_type == "PARSE_ERROR"
@@ -236,7 +239,9 @@ class TestExecuteSelectQuery:
     @pytest.mark.asyncio
     async def test_execute_select_query_network_error(self, executor):
         """Test handling of network/connection errors."""
-        with patch("requests.post", side_effect=requests.RequestException("Network error")):
+        with patch(
+            "requests.post", side_effect=requests.RequestException("Network error")
+        ):
             with pytest.raises(SQLExecutionError) as exc_info:
                 await executor.execute_select_query(
                     "SELECT * FROM test_collection", "test_collection"
@@ -285,7 +290,9 @@ class TestExecuteVectorSelectQuery:
     """Test execute_vector_select_query method."""
 
     @pytest.mark.asyncio
-    async def test_execute_vector_select_query_success(self, executor, mock_vector_results):
+    async def test_execute_vector_select_query_success(
+        self, executor, mock_vector_results
+    ):
         """Test successful vector SQL query execution."""
         mock_vector_results.results = [
             MagicMock(docid="1", score=0.9),
@@ -304,7 +311,7 @@ class TestExecuteVectorSelectQuery:
         mock_response = create_mock_aiohttp_response(
             status=200,
             headers={"Content-Type": "application/json"},
-            text_data=json.dumps(mock_response_data)
+            text_data=json.dumps(mock_response_data),
         )
         mock_session = create_mock_aiohttp_session(mock_response)
 
@@ -321,14 +328,16 @@ class TestExecuteVectorSelectQuery:
             assert len(result["result-set"]["docs"]) == 2
 
     @pytest.mark.asyncio
-    async def test_execute_vector_select_query_with_where_clause(self, executor, mock_vector_results):
+    async def test_execute_vector_select_query_with_where_clause(
+        self, executor, mock_vector_results
+    ):
         """Test vector query with existing WHERE clause."""
         mock_vector_results.results = [MagicMock(docid="1")]
 
         mock_response = create_mock_aiohttp_response(
             status=200,
             headers={"Content-Type": "application/json"},
-            text_data=json.dumps({"result-set": {"docs": []}})
+            text_data=json.dumps({"result-set": {"docs": []}}),
         )
         mock_session = create_mock_aiohttp_session(mock_response)
 
@@ -347,14 +356,16 @@ class TestExecuteVectorSelectQuery:
             assert "AND id IN (1)" in stmt
 
     @pytest.mark.asyncio
-    async def test_execute_vector_select_query_with_limit(self, executor, mock_vector_results):
+    async def test_execute_vector_select_query_with_limit(
+        self, executor, mock_vector_results
+    ):
         """Test vector query with existing LIMIT clause."""
         mock_vector_results.results = [MagicMock(docid="1")]
 
         mock_response = create_mock_aiohttp_response(
             status=200,
             headers={"Content-Type": "application/json"},
-            text_data=json.dumps({"result-set": {"docs": []}})
+            text_data=json.dumps({"result-set": {"docs": []}}),
         )
         mock_session = create_mock_aiohttp_session(mock_response)
 
@@ -372,14 +383,16 @@ class TestExecuteVectorSelectQuery:
             assert "LIMIT 5" in stmt
 
     @pytest.mark.asyncio
-    async def test_execute_vector_select_query_no_results(self, executor, mock_vector_results):
+    async def test_execute_vector_select_query_no_results(
+        self, executor, mock_vector_results
+    ):
         """Test vector query with no vector results."""
         mock_vector_results.results = []
 
         mock_response = create_mock_aiohttp_response(
             status=200,
             headers={"Content-Type": "application/json"},
-            text_data=json.dumps({"result-set": {"docs": []}})
+            text_data=json.dumps({"result-set": {"docs": []}}),
         )
         mock_session = create_mock_aiohttp_session(mock_response)
 
@@ -397,14 +410,16 @@ class TestExecuteVectorSelectQuery:
             assert "WHERE 1=0" in stmt
 
     @pytest.mark.asyncio
-    async def test_execute_vector_select_query_adds_default_limit(self, executor, mock_vector_results):
+    async def test_execute_vector_select_query_adds_default_limit(
+        self, executor, mock_vector_results
+    ):
         """Test that default LIMIT 10 is added if not present."""
         mock_vector_results.results = [MagicMock(docid="1")]
 
         mock_response = create_mock_aiohttp_response(
             status=200,
             headers={"Content-Type": "application/json"},
-            text_data=json.dumps({"result-set": {"docs": []}})
+            text_data=json.dumps({"result-set": {"docs": []}}),
         )
         mock_session = create_mock_aiohttp_session(mock_response)
 
@@ -422,14 +437,14 @@ class TestExecuteVectorSelectQuery:
             assert "LIMIT 10" in stmt
 
     @pytest.mark.asyncio
-    async def test_execute_vector_select_query_http_error(self, executor, mock_vector_results):
+    async def test_execute_vector_select_query_http_error(
+        self, executor, mock_vector_results
+    ):
         """Test handling of HTTP error in vector query."""
         mock_vector_results.results = [MagicMock(docid="1")]
 
         mock_response = create_mock_aiohttp_response(
-            status=500,
-            headers={},
-            text_data="Internal Server Error"
+            status=500, headers={}, text_data="Internal Server Error"
         )
         mock_session = create_mock_aiohttp_session(mock_response)
 
@@ -446,7 +461,9 @@ class TestExecuteVectorSelectQuery:
             assert "Internal Server Error" in str(exc_info.value)
 
     @pytest.mark.asyncio
-    async def test_execute_vector_select_query_text_plain_response(self, executor, mock_vector_results):
+    async def test_execute_vector_select_query_text_plain_response(
+        self, executor, mock_vector_results
+    ):
         """Test handling of text/plain response that contains JSON."""
         mock_vector_results.results = [MagicMock(docid="1")]
 
@@ -454,7 +471,7 @@ class TestExecuteVectorSelectQuery:
         mock_response = create_mock_aiohttp_response(
             status=200,
             headers={"Content-Type": "text/plain"},
-            text_data=json.dumps(mock_response_data)
+            text_data=json.dumps(mock_response_data),
         )
         mock_session = create_mock_aiohttp_session(mock_response)
 
@@ -469,14 +486,16 @@ class TestExecuteVectorSelectQuery:
             assert "result-set" in result
 
     @pytest.mark.asyncio
-    async def test_execute_vector_select_query_non_json_text_response(self, executor, mock_vector_results):
+    async def test_execute_vector_select_query_non_json_text_response(
+        self, executor, mock_vector_results
+    ):
         """Test handling of text/plain response that is not JSON."""
         mock_vector_results.results = [MagicMock(docid="1")]
 
         mock_response = create_mock_aiohttp_response(
             status=200,
             headers={"Content-Type": "text/plain"},
-            text_data="Not JSON at all"
+            text_data="Not JSON at all",
         )
         mock_session = create_mock_aiohttp_session(mock_response)
 
@@ -492,14 +511,16 @@ class TestExecuteVectorSelectQuery:
             assert result["result-set"]["docs"] == []
 
     @pytest.mark.asyncio
-    async def test_execute_vector_select_query_parse_error(self, executor, mock_vector_results):
+    async def test_execute_vector_select_query_parse_error(
+        self, executor, mock_vector_results
+    ):
         """Test handling of response parse error."""
         mock_vector_results.results = [MagicMock(docid="1")]
 
         mock_response = create_mock_aiohttp_response(
             status=200,
             headers={"Content-Type": "application/json"},
-            text_data='{"invalid": '
+            text_data='{"invalid": ',
         )
         mock_session = create_mock_aiohttp_session(mock_response)
 
@@ -515,7 +536,9 @@ class TestExecuteVectorSelectQuery:
             assert "Failed to parse response" in str(exc_info.value)
 
     @pytest.mark.asyncio
-    async def test_execute_vector_select_query_network_error(self, executor, mock_vector_results):
+    async def test_execute_vector_select_query_network_error(
+        self, executor, mock_vector_results
+    ):
         """Test handling of network errors."""
         mock_vector_results.results = [MagicMock(docid="1")]
 
@@ -537,7 +560,9 @@ class TestExecuteVectorSelectQuery:
             assert "Connection failed" in str(exc_info.value)
 
     @pytest.mark.asyncio
-    async def test_execute_vector_select_query_multiple_doc_ids(self, executor, mock_vector_results):
+    async def test_execute_vector_select_query_multiple_doc_ids(
+        self, executor, mock_vector_results
+    ):
         """Test vector query with multiple document IDs."""
         mock_vector_results.results = [
             MagicMock(docid="1"),
@@ -548,7 +573,7 @@ class TestExecuteVectorSelectQuery:
         mock_response = create_mock_aiohttp_response(
             status=200,
             headers={"Content-Type": "application/json"},
-            text_data=json.dumps({"result-set": {"docs": []}})
+            text_data=json.dumps({"result-set": {"docs": []}}),
         )
         mock_session = create_mock_aiohttp_session(mock_response)
 
@@ -566,14 +591,16 @@ class TestExecuteVectorSelectQuery:
             assert "WHERE id IN (1,2,3)" in stmt
 
     @pytest.mark.asyncio
-    async def test_execute_vector_select_query_case_insensitive_where(self, executor, mock_vector_results):
+    async def test_execute_vector_select_query_case_insensitive_where(
+        self, executor, mock_vector_results
+    ):
         """Test that WHERE clause detection is case insensitive."""
         mock_vector_results.results = [MagicMock(docid="1")]
 
         mock_response = create_mock_aiohttp_response(
             status=200,
             headers={"Content-Type": "application/json"},
-            text_data=json.dumps({"result-set": {"docs": []}})
+            text_data=json.dumps({"result-set": {"docs": []}}),
         )
         mock_session = create_mock_aiohttp_session(mock_response)
 
@@ -591,14 +618,16 @@ class TestExecuteVectorSelectQuery:
             assert "AND id IN (1)" in stmt
 
     @pytest.mark.asyncio
-    async def test_execute_vector_select_query_case_insensitive_limit(self, executor, mock_vector_results):
+    async def test_execute_vector_select_query_case_insensitive_limit(
+        self, executor, mock_vector_results
+    ):
         """Test that LIMIT clause detection is case insensitive."""
         mock_vector_results.results = [MagicMock(docid="1")]
 
         mock_response = create_mock_aiohttp_response(
             status=200,
             headers={"Content-Type": "application/json"},
-            text_data=json.dumps({"result-set": {"docs": []}})
+            text_data=json.dumps({"result-set": {"docs": []}}),
         )
         mock_session = create_mock_aiohttp_session(mock_response)
 
@@ -617,14 +646,14 @@ class TestExecuteVectorSelectQuery:
             assert "LIMIT 10" not in stmt
 
     @pytest.mark.asyncio
-    async def test_execute_vector_select_query_reraise_query_error(self, executor, mock_vector_results):
+    async def test_execute_vector_select_query_reraise_query_error(
+        self, executor, mock_vector_results
+    ):
         """Test that QueryError is re-raised correctly."""
         mock_vector_results.results = [MagicMock(docid="1")]
 
         mock_response = create_mock_aiohttp_response(
-            status=400,
-            headers={},
-            text_data="Bad Request"
+            status=400, headers={}, text_data="Bad Request"
         )
         mock_session = create_mock_aiohttp_session(mock_response)
 

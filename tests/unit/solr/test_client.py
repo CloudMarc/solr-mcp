@@ -25,7 +25,7 @@ async def test_init_with_defaults(mock_config):
     """Test initialization with only config."""
     # Set zookeeper_hosts to None to use HTTP provider instead of trying to connect to ZK
     mock_config.zookeeper_hosts = None
-    
+
     client = SolrClient(config=mock_config)
     assert client.config == mock_config
 
@@ -66,7 +66,7 @@ async def test_get_or_create_client_no_collection(mock_config):
     """Test error when no collection specified."""
     # Set zookeeper_hosts to None to use HTTP provider instead of trying to connect to ZK
     mock_config.zookeeper_hosts = None
-    
+
     client = SolrClient(config=mock_config)
     with pytest.raises(SolrError):
         await client._get_or_create_client(None)
@@ -184,7 +184,7 @@ async def test_list_collections_error(client):
     # Test that the error is wrapped
     with pytest.raises(SolrError) as exc_info:
         await client.list_collections()
-    
+
     assert "Failed to list collections" in str(exc_info.value)
 
 
@@ -192,7 +192,10 @@ async def test_list_collections_error(client):
 async def test_list_fields_success(client):
     """Test successful field listing."""
     # Mock the field_manager's list_fields method
-    expected_fields = [{"name": "id", "type": "string"}, {"name": "title", "type": "text_general"}]
+    expected_fields = [
+        {"name": "id", "type": "string"},
+        {"name": "title", "type": "text_general"},
+    ]
     client.field_manager.list_fields = AsyncMock(return_value=expected_fields)
 
     # Test the method
@@ -212,8 +215,10 @@ async def test_list_fields_error(client):
     # Test that the error is wrapped
     with pytest.raises(SolrError) as exc_info:
         await client.list_fields("test_collection")
-    
-    assert "Failed to list fields for collection 'test_collection'" in str(exc_info.value)
+
+    assert "Failed to list fields for collection 'test_collection'" in str(
+        exc_info.value
+    )
 
 
 @pytest.mark.asyncio
@@ -255,7 +260,7 @@ async def test_execute_select_query_generic_error(client):
     # Execute the query and verify the error is wrapped
     with pytest.raises(SQLExecutionError) as exc_info:
         await client.execute_select_query("SELECT * FROM test_collection")
-    
+
     assert "SQL query failed" in str(exc_info.value)
 
 
@@ -265,41 +270,43 @@ async def test_execute_vector_select_query_success(client):
     # Mock the AST with limit
     mock_ast = Mock()
     mock_ast.args = {"limit": Mock(expression=Mock(this="5")), "offset": 0}
-    
+
     # Mock parser and validator
     client.query_builder.parse_and_validate_select = Mock(
         return_value=(mock_ast, "test_collection", None)
     )
-    
+
     # Mock vector manager validation
     client.vector_manager.validate_vector_field = AsyncMock(
         return_value=("vector_field", {"dimensions": 384})
     )
-    
+
     # Mock _get_or_create_client
     mock_solr_client = Mock()
     client._get_or_create_client = AsyncMock(return_value=mock_solr_client)
-    
+
     # Mock vector search execution
     mock_vector_response = {
         "response": {
             "docs": [{"id": "doc1", "score": 0.9}, {"id": "doc2", "score": 0.8}],
-            "numFound": 2
+            "numFound": 2,
         }
     }
-    client.vector_manager.execute_vector_search = AsyncMock(return_value=mock_vector_response)
-    
+    client.vector_manager.execute_vector_search = AsyncMock(
+        return_value=mock_vector_response
+    )
+
     # Mock query executor
     expected_result = {
         "result-set": {"docs": [{"id": "doc1"}, {"id": "doc2"}], "numFound": 2}
     }
     client.query_executor.execute_select_query = AsyncMock(return_value=expected_result)
-    
+
     # Execute the query
     query = "SELECT * FROM test_collection"
     vector = [0.1] * 384
     result = await client.execute_vector_select_query(query, vector, "vector_field")
-    
+
     # Verify the result
     assert result == expected_result
 
@@ -310,37 +317,39 @@ async def test_execute_vector_select_query_no_results(client):
     # Mock the AST without limit
     mock_ast = Mock()
     mock_ast.args = {}
-    
+
     # Mock parser and validator
     client.query_builder.parse_and_validate_select = Mock(
         return_value=(mock_ast, "test_collection", None)
     )
-    
+
     # Mock vector manager validation
     client.vector_manager.validate_vector_field = AsyncMock(
         return_value=("vector_field", {"dimensions": 384})
     )
-    
+
     # Mock _get_or_create_client
     mock_solr_client = Mock()
     client._get_or_create_client = AsyncMock(return_value=mock_solr_client)
-    
+
     # Mock vector search with no results
     mock_vector_response = {"response": {"docs": [], "numFound": 0}}
-    client.vector_manager.execute_vector_search = AsyncMock(return_value=mock_vector_response)
-    
+    client.vector_manager.execute_vector_search = AsyncMock(
+        return_value=mock_vector_response
+    )
+
     # Mock query executor
     expected_result = {"result-set": {"docs": [], "numFound": 0}}
     client.query_executor.execute_select_query = AsyncMock(return_value=expected_result)
-    
+
     # Execute the query
     query = "SELECT * FROM test_collection"
     vector = [0.1] * 384
     result = await client.execute_vector_select_query(query, vector)
-    
+
     # Verify the result
     assert result == expected_result
-    
+
     # Verify the query executor was called with WHERE 1=0 (no results)
     call_args = client.query_executor.execute_select_query.call_args
     assert "WHERE 1=0" in call_args.kwargs["query"]
@@ -352,42 +361,41 @@ async def test_execute_vector_select_query_with_where_clause(client):
     # Mock the AST
     mock_ast = Mock()
     mock_ast.args = {"limit": Mock(expression=Mock(this="10"))}
-    
+
     # Mock parser and validator
     client.query_builder.parse_and_validate_select = Mock(
         return_value=(mock_ast, "test_collection", None)
     )
-    
+
     # Mock vector manager validation
     client.vector_manager.validate_vector_field = AsyncMock(
         return_value=("vector_field", {"dimensions": 384})
     )
-    
+
     # Mock _get_or_create_client
     mock_solr_client = Mock()
     client._get_or_create_client = AsyncMock(return_value=mock_solr_client)
-    
+
     # Mock vector search
     mock_vector_response = {
-        "response": {
-            "docs": [{"id": "doc1", "score": 0.9}],
-            "numFound": 1
-        }
+        "response": {"docs": [{"id": "doc1", "score": 0.9}], "numFound": 1}
     }
-    client.vector_manager.execute_vector_search = AsyncMock(return_value=mock_vector_response)
-    
+    client.vector_manager.execute_vector_search = AsyncMock(
+        return_value=mock_vector_response
+    )
+
     # Mock query executor
     expected_result = {"result-set": {"docs": [{"id": "doc1"}], "numFound": 1}}
     client.query_executor.execute_select_query = AsyncMock(return_value=expected_result)
-    
+
     # Execute the query with WHERE clause
     query = "SELECT * FROM test_collection WHERE status='active' LIMIT 10"
     vector = [0.1] * 384
     result = await client.execute_vector_select_query(query, vector, "vector_field")
-    
+
     # Verify the result
     assert result == expected_result
-    
+
     # Verify the query executor was called with AND clause
     call_args = client.query_executor.execute_select_query.call_args
     assert "AND id IN" in call_args.kwargs["query"]
@@ -400,11 +408,13 @@ async def test_execute_vector_select_query_error(client):
     client.query_builder.parse_and_validate_select = Mock(
         side_effect=Exception("Parse error")
     )
-    
+
     # Execute the query and verify error is wrapped
     with pytest.raises(QueryError) as exc_info:
-        await client.execute_vector_select_query("SELECT * FROM test_collection", [0.1] * 384)
-    
+        await client.execute_vector_select_query(
+            "SELECT * FROM test_collection", [0.1] * 384
+        )
+
     assert "Error executing vector query" in str(exc_info.value)
 
 
@@ -414,33 +424,35 @@ async def test_execute_semantic_select_query_success(client):
     # Mock the AST
     mock_ast = Mock()
     mock_ast.args = {"limit": Mock(expression=Mock(this="5"))}
-    
+
     # Mock parser and validator
     client.query_builder.parse_and_validate_select = Mock(
         return_value=(mock_ast, "test_collection", None)
     )
-    
+
     # Mock vector manager validation
     client.vector_manager.validate_vector_field = AsyncMock(
         return_value=("vector_field", {"dimensions": 384})
     )
-    
+
     # Mock get_vector
     mock_vector = [0.1] * 384
     client.vector_manager.get_vector = AsyncMock(return_value=mock_vector)
-    
+
     # Mock execute_vector_select_query
     expected_result = {"result-set": {"docs": [{"id": "doc1"}], "numFound": 1}}
     client.execute_vector_select_query = AsyncMock(return_value=expected_result)
-    
+
     # Execute the query
     query = "SELECT * FROM test_collection"
     text = "search query"
     result = await client.execute_semantic_select_query(query, text, "vector_field")
-    
+
     # Verify the result
     assert result == expected_result
-    client.execute_vector_select_query.assert_called_once_with(query, mock_vector, "vector_field")
+    client.execute_vector_select_query.assert_called_once_with(
+        query, mock_vector, "vector_field"
+    )
 
 
 @pytest.mark.asyncio
@@ -449,34 +461,36 @@ async def test_execute_semantic_select_query_with_config(client):
     # Mock the AST
     mock_ast = Mock()
     mock_ast.args = {}
-    
+
     # Mock parser and validator
     client.query_builder.parse_and_validate_select = Mock(
         return_value=(mock_ast, "test_collection", None)
     )
-    
+
     # Mock vector manager validation
     client.vector_manager.validate_vector_field = AsyncMock(
         return_value=("vector_field", {"dimensions": 768})
     )
-    
+
     # Mock get_vector
     mock_vector = [0.1] * 768
     client.vector_manager.get_vector = AsyncMock(return_value=mock_vector)
-    
+
     # Mock execute_vector_select_query
     expected_result = {"result-set": {"docs": [], "numFound": 0}}
     client.execute_vector_select_query = AsyncMock(return_value=expected_result)
-    
+
     # Execute the query with config
     query = "SELECT * FROM test_collection"
     text = "search query"
     config = {"model": "custom-model", "base_url": "http://localhost:11434"}
-    result = await client.execute_semantic_select_query(query, text, vector_provider_config=config)
-    
+    result = await client.execute_semantic_select_query(
+        query, text, vector_provider_config=config
+    )
+
     # Verify the result
     assert result == expected_result
-    
+
     # Verify vector was retrieved with config
     client.vector_manager.get_vector.assert_called_once_with(text, config)
 
@@ -488,9 +502,11 @@ async def test_execute_semantic_select_query_error(client):
     client.query_builder.parse_and_validate_select = Mock(
         side_effect=Exception("Parse error")
     )
-    
+
     # Execute the query and verify error is wrapped
     with pytest.raises(SolrError) as exc_info:
-        await client.execute_semantic_select_query("SELECT * FROM test_collection", "search text")
-    
+        await client.execute_semantic_select_query(
+            "SELECT * FROM test_collection", "search text"
+        )
+
     assert "Semantic search failed" in str(exc_info.value)
