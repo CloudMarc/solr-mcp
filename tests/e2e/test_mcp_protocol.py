@@ -286,9 +286,8 @@ async def test_mcp_invalid_json_rpc(mcp_server):
 
 @pytest.mark.asyncio
 @pytest.mark.integration
-@pytest.mark.skip(reason="Concurrent stdout reading not supported in test environment")
 async def test_mcp_concurrent_requests(mcp_server):
-    """Test that server can handle multiple requests."""
+    """Test that server can handle multiple sequential requests with different IDs."""
     # Initialize
     await send_mcp_request(
         mcp_server,
@@ -300,14 +299,16 @@ async def test_mcp_concurrent_requests(mcp_server):
         },
     )
 
-    # Send multiple list_tools requests with different IDs
-    responses = await asyncio.gather(
-        send_mcp_request(mcp_server, "tools/list", {}, request_id=2),
-        send_mcp_request(mcp_server, "tools/list", {}, request_id=3),
-        send_mcp_request(mcp_server, "tools/list", {}, request_id=4),
-    )
+    # Send multiple list_tools requests with different IDs sequentially
+    # (asyncio.StreamReader doesn't support concurrent reads from stdout)
+    responses = []
+    for request_id in [2, 3, 4]:
+        response = await send_mcp_request(
+            mcp_server, "tools/list", {}, request_id=request_id
+        )
+        responses.append(response)
 
-    # All should succeed
+    # All should succeed with correct IDs
     for i, response in enumerate(responses, start=2):
         assert response["id"] == i
         assert "result" in response
