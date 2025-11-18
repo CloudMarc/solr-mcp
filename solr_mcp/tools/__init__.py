@@ -20,7 +20,6 @@ from .solr_select import execute_select_query
 from .solr_semantic_select import execute_semantic_select_query
 from .solr_terms import execute_terms
 from .solr_vector_select import execute_vector_select_query
-from .tool_decorator import get_schema, tool
 
 
 __all__ = [

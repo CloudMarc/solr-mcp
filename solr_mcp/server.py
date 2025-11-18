@@ -75,10 +75,9 @@ class SolrMCPServer:
 
     def _transform_tool_params(self, tool_name: str, params: dict) -> dict:
         """Transform tool parameters before they are passed to the tool."""
-        if "mcp" in params:
-            if isinstance(params["mcp"], str):
-                # If mcp is passed as a string (server name), use self as the server instance
-                params["mcp"] = self
+        if "mcp" in params and isinstance(params["mcp"], str):
+            # If mcp is passed as a string (server name), use self as the server instance
+            params["mcp"] = self
         return params
 
     def _wrap_tool(self, tool):

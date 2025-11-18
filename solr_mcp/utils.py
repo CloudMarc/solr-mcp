@@ -173,7 +173,7 @@ class SolrUtils:
         elif not isinstance(fields, list):
             try:
                 fields = [str(fields)]
-            except:
+            except Exception:
                 return None
 
         sanitized = []

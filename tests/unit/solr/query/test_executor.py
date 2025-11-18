@@ -397,7 +397,7 @@ class TestExecuteVectorSelectQuery:
         mock_session = create_mock_aiohttp_session(mock_response)
 
         with patch("aiohttp.ClientSession", return_value=mock_session):
-            result = await executor.execute_vector_select_query(
+            await executor.execute_vector_select_query(
                 query="SELECT * FROM test_collection",
                 vector=[0.1],
                 field="vector_field",

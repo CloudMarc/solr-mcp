@@ -96,7 +96,7 @@ class VectorManager(VectorSearchProvider):
 
             return vector
         except Exception as e:
-            raise SolrError(f"Error getting vector: {str(e)}")
+            raise SolrError(f"Error getting vector: {str(e)}") from e
 
     def format_knn_query(
         self, vector: list[float], field: str, top_k: int | None = None
@@ -138,7 +138,7 @@ class VectorManager(VectorSearchProvider):
             field = await self.solr_client.field_manager.find_vector_field(collection)
             return field
         except Exception as e:
-            raise SolrError(f"Failed to find vector field: {str(e)}")
+            raise SolrError(f"Failed to find vector field: {str(e)}") from e
 
     async def validate_vector_field(
         self,
@@ -177,8 +177,8 @@ class VectorManager(VectorSearchProvider):
             return field, field_info
         except Exception as e:
             if isinstance(e, SchemaError):
-                raise SolrError(str(e))
-            raise SolrError(f"Failed to validate vector field: {str(e)}")
+                raise SolrError(str(e)) from e
+            raise SolrError(f"Failed to validate vector field: {str(e)}") from e
 
     async def execute_vector_search(  # type: ignore[override]
         self,
@@ -225,7 +225,7 @@ class VectorManager(VectorSearchProvider):
             return results
 
         except Exception as e:
-            raise SolrError(f"Vector search failed: {str(e)}")
+            raise SolrError(f"Vector search failed: {str(e)}") from e
 
     def extract_doc_ids(self, results: dict[str, Any]) -> list[str]:
         """Extract document IDs from search results.

@@ -39,7 +39,7 @@ async def generate_vectors(texts: list[str]) -> list[list[float]]:
 
     print(f"Generating mock vectors for {len(texts)} documents...")
 
-    for i, text in enumerate(texts):
+    for i, _text in enumerate(texts):
         # Generate a random vector, then normalize it
         vector = np.random.randn(768)
         # Normalize to unit length (as typical for vector)

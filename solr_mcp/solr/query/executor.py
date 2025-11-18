@@ -91,7 +91,7 @@ class QueryExecutor:
             raise
         except Exception as e:
             logger.error(f"Unexpected error: {str(e)}")
-            raise SQLExecutionError(f"SQL query failed: {str(e)}")
+            raise SQLExecutionError(f"SQL query failed: {str(e)}") from e
 
     async def execute_vector_select_query(
         self,
@@ -150,10 +150,7 @@ class QueryExecutor:
                         stmt = f"{stmt} WHERE id IN ({','.join(doc_ids)})"
                 else:
                     # No vector search results, return empty result set
-                    if has_where:
-                        stmt = f"{stmt} AND 1=0"  # Always false condition
-                    else:
-                        stmt = f"{stmt} WHERE 1=0"  # Always false condition
+                    stmt = f"{stmt} AND 1=0" if has_where else f"{stmt} WHERE 1=0"
 
                 # Add limit back at the end if it was present or add default limit
                 if limit_part:
@@ -195,9 +192,9 @@ class QueryExecutor:
                     except Exception as e:
                         raise QueryError(
                             f"Failed to parse response: {str(e)}, Response: {response_text[:200]}"
-                        )
+                        ) from e
 
         except Exception as e:
             if isinstance(e, QueryError):
                 raise
-            raise QueryError(f"Error executing vector query: {str(e)}")
+            raise QueryError(f"Error executing vector query: {str(e)}") from e

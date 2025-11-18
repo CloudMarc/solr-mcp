@@ -47,7 +47,7 @@ def test_tools_definition():
 
     assert len(TOOLS_DEFINITION) == len(tools)
 
-    for tool_name, tool_func in tools.items():
+    for _tool_name, tool_func in tools.items():
         assert tool_func in TOOLS_DEFINITION
 
 

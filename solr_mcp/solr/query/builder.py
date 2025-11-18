@@ -70,7 +70,7 @@ class QueryBuilder:
         # Extract and validate sort fields
         sort_fields = self.parser.get_sort_fields(ast)
         if sort_fields:
-            for field, direction in sort_fields:
+            for field, _direction in sort_fields:
                 if not self.field_manager.validate_field_exists(field, collection):
                     raise QueryError(
                         f"Sort field '{field}' does not exist in collection '{collection}'"
@@ -141,7 +141,7 @@ class QueryBuilder:
         except QueryError as e:
             raise e
         except Exception as e:
-            raise QueryError(f"Invalid sort specification: {str(e)}")
+            raise QueryError(f"Invalid sort specification: {str(e)}") from e
 
     def extract_sort_fields(self, sort_spec: str) -> list[str]:
         """Extract sort fields from specification.
@@ -286,4 +286,4 @@ class QueryBuilder:
         except QueryError as e:
             raise e
         except Exception as e:
-            raise QueryError(f"Error building vector query: {str(e)}")
+            raise QueryError(f"Error building vector query: {str(e)}") from e

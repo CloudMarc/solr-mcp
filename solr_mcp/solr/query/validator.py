@@ -43,7 +43,7 @@ class QueryValidator:
         except QueryError:
             raise
         except Exception as e:
-            raise QueryError(f"Field validation error: {str(e)}")
+            raise QueryError(f"Field validation error: {str(e)}") from e
 
     def validate_sort_fields(self, collection: str, fields: list[str]) -> None:
         """Validate that fields are sortable in the collection.
@@ -58,7 +58,7 @@ class QueryValidator:
         try:
             self.field_manager.validate_sort_fields(collection, fields)
         except Exception as e:
-            raise QueryError(f"Sort field validation error: {str(e)}")
+            raise QueryError(f"Sort field validation error: {str(e)}") from e
 
     def validate_sort(self, sort: str | None, collection: str) -> str | None:
         """Validate and normalize sort parameter.
@@ -109,4 +109,4 @@ class QueryValidator:
         except QueryError:
             raise
         except Exception as e:
-            raise QueryError(f"Sort field validation error: {str(e)}")
+            raise QueryError(f"Sort field validation error: {str(e)}") from e

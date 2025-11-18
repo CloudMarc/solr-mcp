@@ -196,9 +196,10 @@ def get_schema(func: Callable) -> ToolSchema:
         param_schema["description"] = param_description
         properties[param_name] = param_schema
 
-        if param.default != inspect.Parameter.empty or is_optional:
-            if param_name in required:
-                required.remove(param_name)
+        if (
+            param.default != inspect.Parameter.empty or is_optional
+        ) and param_name in required:
+            required.remove(param_name)
 
     schema = {
         "name": func.__name__,

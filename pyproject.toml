@@ -114,6 +114,7 @@ exclude = [
     "dist",
     ".eggs",
     "*.egg-info",
+    "scripts/",  # Helper scripts don't need strict linting
 ]
 
 [tool.ruff.lint]
@@ -134,6 +135,13 @@ select = [
 ignore = [
     "E203",  # whitespace before ':'
     "E501",  # line too long (handled by formatter)
+    "N803",  # argument name should be lowercase (Solr API uses camelCase)
+    "N805",  # first argument should be named 'self' (pydantic models)
+    "N806",  # variable in function should be lowercase (Solr API uses camelCase)
+    "B008",  # do not perform function calls in argument defaults (pydantic models)
+    "SIM117", # Use single with statement (tests often need separate contexts)
+    "E721",  # Type comparison with == instead of is (valid in tests checking annotations)
+    "F403",  # Star imports (common pattern for pytest fixtures in conftest.py)
 ]
 
 [tool.ruff.lint.isort]

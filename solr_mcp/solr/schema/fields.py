@@ -63,12 +63,12 @@ class FieldManager:
 
         except HTTPError as e:
             if getattr(e.response, "status_code", None) == 404:
-                raise SchemaError(f"Collection not found: {collection}")
-            raise SchemaError(f"Failed to get schema: {str(e)}")
+                raise SchemaError(f"Collection not found: {collection}") from e
+            raise SchemaError(f"Failed to get schema: {str(e)}") from e
 
         except Exception as e:
             logger.error(f"Error getting schema: {str(e)}")
-            raise SchemaError(f"Failed to get schema: {str(e)}")
+            raise SchemaError(f"Failed to get schema: {str(e)}") from e
 
     def get_field_types(self, collection: str) -> dict[str, str]:
         """Get field types for a collection."""
@@ -125,7 +125,7 @@ class FieldManager:
             raise
         except Exception as e:
             logger.error(f"Error validating field {field}: {str(e)}")
-            raise SchemaError(f"Error validating field {field}: {str(e)}")
+            raise SchemaError(f"Error validating field {field}: {str(e)}") from e
 
     def validate_sort_field(self, field: str, collection: str) -> bool:
         """Validate that a field can be used for sorting.
@@ -153,7 +153,7 @@ class FieldManager:
             raise
         except Exception as e:
             logger.error(f"Error validating sort field {field}: {str(e)}")
-            raise SchemaError(f"Error validating sort field {field}: {str(e)}")
+            raise SchemaError(f"Error validating sort field {field}: {str(e)}") from e
 
     def get_field_info(
         self, collection: str, field: str | None = None
@@ -228,7 +228,7 @@ class FieldManager:
             raise
         except Exception as e:
             logger.error(f"Error getting field info: {str(e)}")
-            raise SchemaError(f"Failed to get field info: {str(e)}")
+            raise SchemaError(f"Failed to get field info: {str(e)}") from e
 
     def validate_collection(self, collection: str) -> bool:
         """Validate that a collection exists.
@@ -248,7 +248,9 @@ class FieldManager:
 
         except Exception as e:
             logger.error(f"Error validating collection {collection}: {str(e)}")
-            raise SchemaError(f"Collection {collection} does not exist: {str(e)}")
+            raise SchemaError(
+                f"Collection {collection} does not exist: {str(e)}"
+            ) from e
 
     def clear_cache(self, collection: str | None = None):
         """Clear schema cache.
@@ -411,7 +413,7 @@ class FieldManager:
                 field_name = field.get("name")
                 field_type = field.get("type")
                 multi_valued = field.get("multiValued", False)
-                doc_values = field.get("docValues", False)
+                field.get("docValues", False)
 
                 # Skip special fields, multi-valued fields, and fields without a recognized type
                 if (
@@ -511,11 +513,11 @@ class FieldManager:
             if "Collection not found" in str(e):
                 raise
             logger.error(f"Error validating collection: {str(e)}")
-            raise SchemaError(f"Error validating collection: {str(e)}")
+            raise SchemaError(f"Error validating collection: {str(e)}") from e
 
         except Exception as e:
             logger.error(f"Error validating collection: {str(e)}")
-            raise SchemaError(f"Error validating collection: {str(e)}")
+            raise SchemaError(f"Error validating collection: {str(e)}") from e
 
     async def list_fields(self, collection: str) -> list[dict[str, Any]]:
         """List all fields in a collection with their properties.
@@ -560,7 +562,7 @@ class FieldManager:
         except Exception as e:
             raise SchemaError(
                 f"Failed to list fields for collection '{collection}': {str(e)}"
-            )
+            ) from e
 
     async def find_vector_field(self, collection: str) -> str:
         """Find the first vector field in a collection.
@@ -599,7 +601,7 @@ class FieldManager:
         except Exception as e:
             raise SchemaError(
                 f"Failed to find vector field in collection '{collection}': {str(e)}"
-            )
+            ) from e
 
     async def validate_vector_field_dimension(
         self,
@@ -643,10 +645,13 @@ class FieldManager:
             # Check if field is a vector type (supporting both dense_vector and knn_vector)
             field_type = field_info.get("type")
             field_class = field_info.get("class")
-            if (
-                field_type not in ["dense_vector", "knn_vector"]
-                and field_class != "solr.DenseVectorField"
-            ):
+            # Accept fields with knn_vector prefix or DenseVectorField class
+            is_vector_field = (
+                field_type in ["dense_vector", "knn_vector"]
+                or (field_type and field_type.startswith("knn_vector"))
+                or field_class == "solr.DenseVectorField"
+            )
+            if not is_vector_field:
                 raise SchemaError(
                     f"Field '{field}' is not a vector field (type: {field_type}, class: {field_class})"
                 )
@@ -709,13 +714,12 @@ class FieldManager:
             # If vector provider model and dimensions are provided, check compatibility
             if vector_provider_model and model_dimensions:
                 model_dimension = model_dimensions.get(vector_provider_model)
-                if model_dimension:
+                if model_dimension and int(vector_dimension) != model_dimension:
                     # Validate dimensions match
-                    if int(vector_dimension) != model_dimension:
-                        raise SchemaError(
-                            f"Vector dimension mismatch: field '{field}' has dimension {vector_dimension}, "
-                            f"but model '{vector_provider_model}' produces vectors with dimension {model_dimension}"
-                        )
+                    raise SchemaError(
+                        f"Vector dimension mismatch: field '{field}' has dimension {vector_dimension}, "
+                        f"but model '{vector_provider_model}' produces vectors with dimension {model_dimension}"
+                    )
 
             # Cache the result
             self._vector_field_cache[cache_key] = field_info
@@ -724,4 +728,6 @@ class FieldManager:
         except SchemaError:
             raise
         except Exception as e:
-            raise SchemaError(f"Error validating vector field dimension: {str(e)}")
+            raise SchemaError(
+                f"Error validating vector field dimension: {str(e)}"
+            ) from e

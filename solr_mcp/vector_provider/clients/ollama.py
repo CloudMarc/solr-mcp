@@ -65,7 +65,7 @@ class OllamaVectorProvider(VectorSearchProvider):
                 if attempt == self.retries:
                     raise Exception(
                         f"Failed to get vector with model {actual_model} after {self.retries} retries: {str(e)}"
-                    )
+                    ) from e
                 logger.warning(
                     f"Failed to get vector with model {actual_model} (attempt {attempt + 1}/{self.retries + 1}): {str(e)}"
                 )
@@ -120,7 +120,7 @@ class OllamaVectorProvider(VectorSearchProvider):
             return results
 
         except Exception as e:
-            raise Exception(f"Vector search failed: {str(e)}")
+            raise Exception(f"Vector search failed: {str(e)}") from e
 
     @property
     def vector_dimension(self) -> int:

@@ -58,7 +58,7 @@ class QueryParser:
             try:
                 ast = parse_one(preprocessed)
             except ParseError as e:
-                raise QueryError(f"Invalid SQL syntax: {str(e)}")
+                raise QueryError(f"Invalid SQL syntax: {str(e)}") from e
 
             if not isinstance(ast, Select):
                 raise QueryError("Query must be a SELECT statement")
@@ -77,9 +77,7 @@ class QueryParser:
             if isinstance(from_expr, Table):
                 collection = from_expr.name
             elif isinstance(from_expr, From):
-                if isinstance(from_expr.this, Table) or isinstance(
-                    from_expr.this, Identifier
-                ):
+                if isinstance(from_expr.this, (Table, Identifier)):
                     collection = from_expr.this.name
                 elif hasattr(from_expr.this, "this") and isinstance(
                     from_expr.this.this, (Table, Identifier)
@@ -108,9 +106,9 @@ class QueryParser:
             return ast, collection, fields
 
         except QueryError as e:
-            raise e
+            raise e from e
         except Exception as e:
-            raise QueryError(f"Error parsing query: {str(e)}")
+            raise QueryError(f"Error parsing query: {str(e)}") from e
 
     def get_sort_fields(self, ast: Select) -> list[tuple[str, str]]:
         """Get sort fields from AST.
