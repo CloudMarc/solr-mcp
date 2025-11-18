@@ -6,7 +6,7 @@ Automatically falls back to traditional grep if Solr is unavailable.
 """
 
 import subprocess
-from typing import Any, Optional
+from typing import Any
 
 from solr_mcp.tools.tool_decorator import tool
 
@@ -15,7 +15,7 @@ from solr_mcp.tools.tool_decorator import tool
 async def execute_fast_codebase_search(
     mcp,
     pattern: str,
-    file_type: Optional[str] = None,
+    file_type: str | None = None,
     collection: str = "codebase",
     max_results: int = 100,
     use_highlighting: bool = True,
@@ -79,7 +79,7 @@ async def execute_fast_codebase_search(
 async def _solr_search(
     mcp,
     pattern: str,
-    file_type: Optional[str],
+    file_type: str | None,
     collection: str,
     max_results: int,
     use_highlighting: bool,
@@ -158,7 +158,7 @@ async def _solr_search(
 
 async def _grep_fallback(
     pattern: str,
-    file_type: Optional[str],
+    file_type: str | None,
     max_results: int,
 ) -> dict[str, Any]:
     """Fallback to grep when Solr unavailable."""

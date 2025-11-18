@@ -7,7 +7,7 @@ Automatically falls back to traditional find if Solr is unavailable.
 
 import subprocess
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 from solr_mcp.tools.tool_decorator import tool
 
@@ -16,8 +16,8 @@ from solr_mcp.tools.tool_decorator import tool
 async def execute_fast_file_find(
     mcp,
     pattern: str,
-    file_type: Optional[str] = None,
-    category: Optional[str] = None,
+    file_type: str | None = None,
+    category: str | None = None,
     collection: str = "codebase",
     max_results: int = 100,
 ) -> dict[str, Any]:
@@ -83,8 +83,8 @@ async def execute_fast_file_find(
 async def _solr_find(
     mcp,
     pattern: str,
-    file_type: Optional[str],
-    category: Optional[str],
+    file_type: str | None,
+    category: str | None,
     collection: str,
     max_results: int,
 ) -> dict[str, Any]:
@@ -155,7 +155,7 @@ async def _solr_find(
 
 async def _find_fallback(
     pattern: str,
-    file_type: Optional[str],
+    file_type: str | None,
     max_results: int,
 ) -> dict[str, Any]:
     """Fallback to find command when Solr unavailable."""

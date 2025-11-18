@@ -4,7 +4,7 @@ Codebase statistics tools using Solr facets and aggregations.
 Provides instant statistics about the codebase (50-500x faster than shell scripts).
 """
 
-from typing import Any, Optional
+from typing import Any
 
 from solr_mcp.tools.tool_decorator import tool
 
@@ -72,7 +72,7 @@ async def execute_codebase_analytics(
     mcp,
     analysis_type: str,
     collection: str = "codebase",
-    threshold: Optional[int] = None,
+    threshold: int | None = None,
 ) -> dict[str, Any]:
     """Advanced codebase analytics using Solr queries.
 
