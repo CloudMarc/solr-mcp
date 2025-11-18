@@ -23,6 +23,7 @@ async def mcp_server():
     """
     # Set environment variables for testing
     import os
+
     env = os.environ.copy()
     env["SOLR_BASE_URL"] = "http://localhost:8983/solr"
     env["DEFAULT_COLLECTION"] = "unified"

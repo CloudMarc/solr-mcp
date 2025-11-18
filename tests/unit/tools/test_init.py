@@ -4,8 +4,12 @@ from solr_mcp.tools import (
     TOOLS_DEFINITION,
     execute_add_documents,
     execute_atomic_update,
+    execute_codebase_analytics,
+    execute_codebase_statistics,
     execute_commit,
     execute_delete_documents,
+    execute_fast_codebase_search,
+    execute_fast_file_find,
     execute_list_collections,
     execute_list_fields,
     execute_query,
@@ -43,6 +47,10 @@ def test_tools_definition():
         "solr_add_documents": execute_add_documents,
         "solr_delete_documents": execute_delete_documents,
         "solr_commit": execute_commit,
+        "solr_fast_codebase_search": execute_fast_codebase_search,
+        "solr_fast_file_find": execute_fast_file_find,
+        "solr_codebase_statistics": execute_codebase_statistics,
+        "solr_codebase_analytics": execute_codebase_analytics,
     }
 
     assert len(TOOLS_DEFINITION) == len(tools)
@@ -73,6 +81,10 @@ def test_tools_exports():
         "execute_add_documents",
         "execute_delete_documents",
         "execute_commit",
+        "execute_fast_codebase_search",
+        "execute_fast_file_find",
+        "execute_codebase_statistics",
+        "execute_codebase_analytics",
     }
 
     assert set(__all__) == expected
