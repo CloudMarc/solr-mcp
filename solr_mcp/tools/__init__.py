@@ -3,6 +3,9 @@
 import inspect
 import sys
 
+from .codebase_statistics import execute_codebase_analytics, execute_codebase_statistics
+from .fast_codebase_search import execute_fast_codebase_search
+from .fast_file_find import execute_fast_file_find
 from .solr_add_documents import execute_add_documents
 from .solr_atomic_update import execute_atomic_update
 from .solr_commit import execute_commit
@@ -40,6 +43,10 @@ __all__ = [
     "execute_add_documents",
     "execute_delete_documents",
     "execute_commit",
+    "execute_fast_codebase_search",
+    "execute_fast_file_find",
+    "execute_codebase_statistics",
+    "execute_codebase_analytics",
 ]
 
 TOOLS_DEFINITION = [
