@@ -189,9 +189,8 @@ async def test_mcp_tool_schemas(mcp_server):
 
 @pytest.mark.asyncio
 @pytest.mark.integration
-@pytest.mark.skip(reason="Requires running Solr instance")
 async def test_mcp_call_tool_list_collections(mcp_server):
-    """Test calling solr_list_collections tool through MCP."""
+    """Test calling execute_list_collections tool through MCP."""
     # Initialize
     await send_mcp_request(
         mcp_server,
@@ -207,21 +206,23 @@ async def test_mcp_call_tool_list_collections(mcp_server):
     response = await send_mcp_request(
         mcp_server,
         "tools/call",
-        {"name": "solr_list_collections", "arguments": {}},
+        {"name": "execute_list_collections", "arguments": {}},
         request_id=2,
     )
 
     assert response["jsonrpc"] == "2.0"
     assert response["id"] == 2
 
-    # Should either succeed or fail gracefully
-    if "result" in response:
-        # Success case
-        assert "content" in response["result"]
-    else:
-        # Error case (e.g., Solr not running)
-        assert "error" in response
-        assert "message" in response["error"]
+    # Should succeed since Solr is running
+    assert "result" in response, f"Expected result, got: {response}"
+    assert "content" in response["result"]
+
+    # Verify we got collection data
+    content = response["result"]["content"]
+    assert len(content) > 0
+    # Should be a list of text content items
+    assert isinstance(content, list)
+    assert content[0]["type"] == "text"
 
 
 @pytest.mark.asyncio
