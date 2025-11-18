@@ -7,13 +7,12 @@ VENV_DIR ?= .venv
 .DEFAULT_GOAL := help
 
 # Prevent make from conflicting with file names
-.PHONY: all install dev run test test-unit test-integration test-cov test-cov-html \
-        test-priority-critical test-priority-high test-roadmap \
-        lint typecheck format clean clean-test clean-pyc clean-build \
+.PHONY: all install dev run test test-unit test-integration test-integration-full \
+        test-all test-cov test-cov-html test-priority-critical test-priority-high \
+        test-roadmap lint typecheck format clean clean-test clean-pyc clean-build \
         docker-up docker-down docker-logs docker-restart docker-clean \
         solr-status solr-collections solr-create-test solr-create-unified \
-        solr-index-test solr-index-unified \
-        help .install-uv
+        solr-index-test solr-index-unified help .install-uv
 
 # Colors for terminal output
 CYAN := \033[0;36m
@@ -67,16 +66,39 @@ test: install ## Run unit tests with coverage and type checking
 	uv run env PYTHONPATH=. pytest tests/unit --cov=solr_mcp --cov-report=term-missing --cov-fail-under=$(COVERAGE_MIN)
 
 # Run integration tests only (requires Solr)
-test-integration: install ## Run integration tests (requires Solr running)
-	@echo "$(YELLOW)Warning: This requires Solr to be running (make docker-up)$(NC)"
+test-integration: install ## Run integration tests (auto-configures Solr)
+	@echo "$(CYAN)--- 🔧 Setting up Solr for integration tests ---$(NC)"
+	@./scripts/setup_integration_tests.sh || { echo "$(RED)✗ Solr setup failed$(NC)"; exit 1; }
+	@echo ""
 	@echo "$(GREEN)--- 🔗 Running integration tests ---$(NC)"
-	uv run env PYTHONPATH=. pytest tests/integration -m integration -v
+	@uv run env PYTHONPATH=. pytest tests/integration -v
 
-# Run all tests (unit + integration)
-test-all: install ## Run all tests (unit + integration, requires Solr)
-	@echo "$(YELLOW)Warning: This requires Solr to be running (make docker-up)$(NC)"
-	@echo "$(GREEN)--- 🧪 Running all tests ---$(NC)"
-	uv run env PYTHONPATH=. pytest tests/ -v
+# Run full integration tests with Docker management
+test-integration-full: install ## Run integration tests with automatic Docker startup/shutdown
+	@echo "$(GREEN)--- 🚀 Starting comprehensive integration tests ---$(NC)"
+	@./scripts/run_full_integration_tests.sh
+
+# Run all tests (unit + integration + E2E) with type checking
+test-all: install ## Run comprehensive tests (mypy + unit + integration + E2E)
+	@echo "$(GREEN)--- 🔍 Type checking with mypy ---$(NC)"
+	@uv run mypy solr_mcp/ || { echo "$(RED)✗ Type checking failed$(NC)"; exit 1; }
+	@echo ""
+	@echo "$(GREEN)--- 🧹 Linting with ruff ---$(NC)"
+	@uv run ruff check . || { echo "$(RED)✗ Linting failed$(NC)"; exit 1; }
+	@echo ""
+	@echo "$(GREEN)--- 🧪 Running unit tests with coverage ---$(NC)"
+	@uv run env PYTHONPATH=. pytest tests/unit --cov=solr_mcp --cov-report=term-missing --cov-fail-under=$(COVERAGE_MIN) || { echo "$(RED)✗ Unit tests failed$(NC)"; exit 1; }
+	@echo ""
+	@echo "$(CYAN)--- 🔧 Setting up Solr for integration tests ---$(NC)"
+	@./scripts/setup_integration_tests.sh || { echo "$(RED)✗ Solr setup failed$(NC)"; exit 1; }
+	@echo ""
+	@echo "$(YELLOW)--- 🔗 Running integration tests ---$(NC)"
+	@uv run env PYTHONPATH=. pytest tests/integration -v || { echo "$(YELLOW)⚠ Integration tests failed$(NC)"; exit 1; }
+	@echo ""
+	@echo "$(YELLOW)--- 🌐 Running E2E MCP protocol tests ---$(NC)"
+	@uv run env PYTHONPATH=. pytest tests/e2e -v || { echo "$(YELLOW)⚠ E2E tests failed$(NC)"; exit 1; }
+	@echo ""
+	@echo "$(GREEN)✓ All tests passed!$(NC)"
 
 # Generate HTML coverage report
 test-cov-html: install ## Run tests with HTML coverage report
@@ -275,10 +297,11 @@ help: ## Display this help message
 	@echo "  $(CYAN)make setup$(NC)                  - Full setup: install deps"
 	@echo ""
 	@echo "$(YELLOW)Testing:$(NC)"
-	@echo "  $(CYAN)make test$(NC)                   - Run unit tests with coverage"
+	@echo "  $(CYAN)make test$(NC)                   - Run unit tests with coverage & type checking"
 	@echo "  $(CYAN)make test-unit$(NC)              - Run unit tests only (fast, no coverage)"
 	@echo "  $(CYAN)make test-integration$(NC)       - Run integration tests (requires Solr)"
-	@echo "  $(CYAN)make test-all$(NC)               - Run all tests (unit + integration)"
+	@echo "  $(CYAN)make test-integration-full$(NC)  - Run integration tests with auto Docker mgmt"
+	@echo "  $(CYAN)make test-all$(NC)               - Run ALL tests (mypy + lint + unit + integration + E2E)"
 	@echo "  $(CYAN)make test-cov-html$(NC)          - Generate HTML coverage report"
 	@echo "  $(CYAN)make test-priority-critical$(NC) - Run critical priority tests"
 	@echo "  $(CYAN)make test-priority-high$(NC)     - Run high priority tests"

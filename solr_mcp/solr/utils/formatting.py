@@ -97,9 +97,9 @@ def format_sql_response(raw_response: dict[str, Any]) -> dict[str, Any]:
             }
         }
     except QueryError as e:
-        raise e
+        raise e from e
     except Exception as e:
-        raise QueryError(f"Error formatting SQL response: {str(e)}")
+        raise QueryError(f"Error formatting SQL response: {str(e)}") from e
 
 
 def format_error_response(error: Exception) -> str:

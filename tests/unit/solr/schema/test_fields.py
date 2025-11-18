@@ -526,8 +526,8 @@ def test_get_collection_fields_error_fallback(field_manager):
 
 
 # Tests for _get_searchable_fields
-def test_get_searchable_fields_schema_api(field_manager):
-    """Test _get_searchable_fields with successful schema API call."""
+def test_get_searchable_fields_with_filtering(field_manager):
+    """Test _get_searchable_fields with version field filtering."""
     mock_response = Mock()
     mock_response.json.return_value = {
         "fields": [

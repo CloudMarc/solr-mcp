@@ -171,10 +171,7 @@ async def create_collection(collection_name="testvectors"):
 
 async def main():
     """Main entry point."""
-    if len(sys.argv) > 1:
-        collection_name = sys.argv[1]
-    else:
-        collection_name = "testvectors"
+    collection_name = sys.argv[1] if len(sys.argv) > 1 else "testvectors"
 
     success = await create_collection(collection_name)
     sys.exit(0 if success else 1)

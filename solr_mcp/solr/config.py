@@ -31,15 +31,18 @@ class SolrConfig(BaseModel):
             for error in e.errors():
                 if error["type"] == "missing":
                     field = error["loc"][0]
-                    raise ConfigurationError(f"{field} is required")
+                    raise ConfigurationError(f"{field} is required") from e
                 elif error["type"] == "greater_than":
                     field = error["loc"][0]
                     if field == "connection_timeout":
-                        raise ConfigurationError("connection_timeout must be positive")
+                        raise ConfigurationError(
+                            "connection_timeout must be positive"
+                        ) from e
             # If we get here, it's some other validation error
-            raise ConfigurationError(str(e))
+            raise ConfigurationError(str(e)) from e
 
     @field_validator("solr_base_url")
+    @classmethod
     def validate_solr_url(cls, v: str) -> str:
         """Validate Solr base URL."""
         if not v:
@@ -51,6 +54,7 @@ class SolrConfig(BaseModel):
         return v
 
     @field_validator("zookeeper_hosts")
+    @classmethod
     def validate_zookeeper_hosts(cls, v: list[str]) -> list[str]:
         """Validate ZooKeeper hosts."""
         if not v:
@@ -100,34 +104,36 @@ class SolrConfig(BaseModel):
                 for error in e.errors():
                     if error["type"] == "missing":
                         field = error["loc"][0]
-                        raise ConfigurationError(f"{field} is required")
+                        raise ConfigurationError(f"{field} is required") from e
                     elif error["type"] == "greater_than":
                         field = error["loc"][0]
                         if field == "connection_timeout":
                             raise ConfigurationError(
                                 "connection_timeout must be positive"
-                            )
+                            ) from e
                 # If we get here, it's some other validation error
-                raise ConfigurationError(str(e))
+                raise ConfigurationError(str(e)) from e
 
-        except FileNotFoundError:
-            raise ConfigurationError(f"Configuration file not found: {config_path}")
+        except FileNotFoundError as e:
+            raise ConfigurationError(
+                f"Configuration file not found: {config_path}"
+            ) from e
 
-        except json.JSONDecodeError:
+        except json.JSONDecodeError as e:
             raise ConfigurationError(
                 f"Invalid JSON in configuration file: {config_path}"
-            )
+            ) from e
 
         except Exception as e:
             if isinstance(e, ConfigurationError):
                 raise
-            raise ConfigurationError(f"Failed to load config: {str(e)}")
+            raise ConfigurationError(f"Failed to load config: {str(e)}") from e
 
     def to_dict(self) -> dict[str, Any]:
         """Convert config to dictionary."""
         return self.model_dump()
 
-    def model_validate(cls, *args, **kwargs):
+    def model_validate(self, *args, **kwargs):
         """Override model_validate to handle validation errors."""
         try:
             return super().model_validate(*args, **kwargs)
@@ -136,10 +142,12 @@ class SolrConfig(BaseModel):
             for error in e.errors():
                 if error["type"] == "missing":
                     field = error["loc"][0]
-                    raise ConfigurationError(f"{field} is required")
+                    raise ConfigurationError(f"{field} is required") from e
                 elif error["type"] == "greater_than":
                     field = error["loc"][0]
                     if field == "connection_timeout":
-                        raise ConfigurationError("connection_timeout must be positive")
+                        raise ConfigurationError(
+                            "connection_timeout must be positive"
+                        ) from e
             # If we get here, it's some other validation error
-            raise ConfigurationError(str(e))
+            raise ConfigurationError(str(e)) from e

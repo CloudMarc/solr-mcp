@@ -137,7 +137,7 @@ class TestFieldManager:
 
         searchable_fields = field_manager._get_searchable_fields("test_collection")
         assert isinstance(searchable_fields, list)
-        assert set(searchable_fields) == set(["title", "content", "_text_"])
+        assert set(searchable_fields) == {"title", "content", "_text_"}
 
     def test_get_sortable_fields_success(self, field_manager, mock_schema_requests):
         """Test getting sortable fields."""
@@ -264,7 +264,7 @@ class TestFieldManager:
         ]
 
         searchable_fields = field_manager._get_searchable_fields("test_collection")
-        assert set(searchable_fields) == set(["content", "title", "_text_"])
+        assert set(searchable_fields) == {"content", "title", "_text_"}
 
     def test_get_sortable_fields_empty_response(
         self, field_manager, mock_schema_requests
@@ -300,7 +300,7 @@ class TestFieldManager:
         mock_schema_requests.get.return_value = mock_response
 
         searchable_fields = field_manager._get_searchable_fields("test_collection")
-        assert set(searchable_fields) == set(["content", "title", "_text_"])
+        assert set(searchable_fields) == {"content", "title", "_text_"}
 
     def test_get_searchable_fields_empty_response(
         self, field_manager, mock_schema_requests
@@ -312,7 +312,7 @@ class TestFieldManager:
         mock_schema_requests.get.return_value = mock_response
 
         searchable_fields = field_manager._get_searchable_fields("test_collection")
-        assert set(searchable_fields) == set(["content", "title", "_text_"])
+        assert set(searchable_fields) == {"content", "title", "_text_"}
 
     def test_get_collection_fields_error_with_cache_fallback(
         self, field_manager, mock_schema_requests

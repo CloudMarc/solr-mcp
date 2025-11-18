@@ -50,8 +50,9 @@ async def solr_client():
 async def test_basic_search(solr_client):
     """Test basic search functionality."""
     # Use the SQL query instead of search for consistency
+    # Select specific fields to avoid multi-valued field casting issues
     result = await solr_client.execute_select_query(
-        query=f"SELECT * FROM {TEST_COLLECTION} WHERE id IS NOT NULL LIMIT 5"
+        query=f"SELECT id, title FROM {TEST_COLLECTION} WHERE id IS NOT NULL LIMIT 5"
     )
 
     # The result is already a dictionary
@@ -70,8 +71,9 @@ async def test_basic_search(solr_client):
 async def test_search_with_filters(solr_client):
     """Test search with filters/WHERE clause."""
     # Use SQL query with WHERE clause
+    # Select specific fields to avoid multi-valued field casting issues
     result = await solr_client.execute_select_query(
-        query=f"SELECT * FROM {TEST_COLLECTION} WHERE text:blockchain AND id IS NOT NULL LIMIT 5"
+        query=f"SELECT id, title FROM {TEST_COLLECTION} WHERE text:blockchain AND id IS NOT NULL LIMIT 5"
     )
 
     # The result is already a dictionary

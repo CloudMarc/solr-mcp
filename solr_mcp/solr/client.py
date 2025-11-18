@@ -126,7 +126,7 @@ class SolrClient:
         try:
             return await self.collection_provider.list_collections()
         except Exception as e:
-            raise SolrError(f"Failed to list collections: {str(e)}")
+            raise SolrError(f"Failed to list collections: {str(e)}") from e
 
     async def list_fields(self, collection: str) -> list[dict[str, Any]]:
         """List all fields in a collection with their properties."""
@@ -135,7 +135,7 @@ class SolrClient:
         except Exception as e:
             raise SolrError(
                 f"Failed to list fields for collection '{collection}': {str(e)}"
-            )
+            ) from e
 
     def _format_search_results(
         self, results: pysolr.Results, start: int = 0
@@ -165,7 +165,7 @@ class SolrClient:
             raise
         except Exception as e:
             logger.error(f"Unexpected error: {str(e)}")
-            raise SQLExecutionError(f"SQL query failed: {str(e)}")
+            raise SQLExecutionError(f"SQL query failed: {str(e)}") from e
 
     async def execute_vector_select_query(
         self, query: str, vector: list[float], field: str | None = None
@@ -253,10 +253,7 @@ class SolrClient:
                     stmt = f"{stmt} WHERE id IN ({','.join(doc_ids)})"
             else:
                 # No vector search results, return empty result set
-                if has_where:
-                    stmt = f"{stmt} AND 1=0"  # Always false condition
-                else:
-                    stmt = f"{stmt} WHERE 1=0"  # Always false condition
+                stmt = f"{stmt} AND 1=0" if has_where else f"{stmt} WHERE 1=0"
 
             # Add limit back at the end if it was present or add default limit
             if limit_part:
@@ -272,7 +269,7 @@ class SolrClient:
         except Exception as e:
             if isinstance(e, (QueryError, SolrError)):
                 raise
-            raise QueryError(f"Error executing vector query: {str(e)}")
+            raise QueryError(f"Error executing vector query: {str(e)}") from e
 
     async def execute_semantic_select_query(
         self,
@@ -319,7 +316,7 @@ class SolrClient:
         except Exception as e:
             if isinstance(e, (QueryError, SolrError)):
                 raise
-            raise SolrError(f"Semantic search failed: {str(e)}")
+            raise SolrError(f"Semantic search failed: {str(e)}") from e
 
     async def add_documents(
         self,
@@ -360,27 +357,24 @@ class SolrClient:
             # Add documents using pysolr
             # pysolr.Solr.add is synchronous, but we're in async context
             # We'll use it directly since it's a quick operation
-            client.add(
+            response = client.add(
                 documents,
                 commit=commit,
                 commitWithin=commit_within,
                 overwrite=overwrite,
             )
 
-            return {
-                "status": "success",
-                "collection": collection,
-                "num_documents": len(documents),
-                "committed": commit,
-                "commit_within": commit_within,
-            }
+            # Parse and return raw Solr response
+            import json
+
+            return json.loads(response)
 
         except IndexingError:
             raise
         except SolrError:
             raise
         except Exception as e:
-            raise IndexingError(f"Failed to add documents: {str(e)}")
+            raise IndexingError(f"Failed to add documents: {str(e)}") from e
 
     async def delete_documents(
         self,
@@ -416,36 +410,49 @@ class SolrClient:
             if collection not in collections:
                 raise SolrError(f"Collection '{collection}' does not exist")
 
-            # Get or create client for this collection
-            client = await self._get_or_create_client(collection)
+            # Build delete URL
+            import requests
 
-            # Delete documents
-            if ids:
-                client.delete(id=ids, commit=commit)
-                num_affected = len(ids)
-            else:
-                client.delete(q=query, commit=commit)
-                num_affected = "unknown (query-based)"  # type: ignore[assignment]
+            delete_url = f"{self.base_url}/{collection}/update"
 
-            return {
-                "status": "success",
-                "collection": collection,
-                "num_affected": num_affected,
-                "committed": commit,
-                "delete_by": "id" if ids else "query",
-            }
+            # Build delete payload
+            payload: dict[str, Any] = (
+                {"delete": ids} if ids else {"delete": {"query": query}}
+            )
+
+            # Build parameters
+            params = {"wt": "json"}
+            if commit:
+                params["commit"] = "true"
+
+            # Execute delete
+            response = requests.post(
+                delete_url,
+                json=payload,
+                params=params,
+                headers={"Content-Type": "application/json"},
+            )
+
+            if response.status_code != 200:
+                raise IndexingError(
+                    f"Delete failed with status {response.status_code}: {response.text}"
+                )
+
+            # Return raw Solr response
+            return response.json()
 
         except IndexingError:
             raise
         except SolrError:
             raise
         except Exception as e:
-            raise IndexingError(f"Failed to delete documents: {str(e)}")
+            raise IndexingError(f"Failed to delete documents: {str(e)}") from e
 
     async def commit(
         self,
         collection: str,
         soft: bool = False,
+        soft_commit: bool | None = None,
         wait_searcher: bool = True,
         expunge_deletes: bool = False,
     ) -> dict[str, Any]:
@@ -455,6 +462,7 @@ class SolrClient:
             collection: The collection to commit
             soft: If True, soft commit (visible but not durable)
                   If False, hard commit (durable to disk)
+            soft_commit: Alias for soft parameter (for compatibility)
             wait_searcher: Wait for new searcher to open
             expunge_deletes: Merge away deleted documents
 
@@ -478,7 +486,10 @@ class SolrClient:
             # Build commit parameters
             params = {"wt": "json"}
 
-            if soft:
+            # Handle soft_commit alias
+            is_soft = soft_commit if soft_commit is not None else soft
+
+            if is_soft:
                 params["softCommit"] = "true"
             else:
                 params["commit"] = "true"
@@ -486,24 +497,22 @@ class SolrClient:
                 params["expungeDeletes"] = "true" if expunge_deletes else "false"
 
             # Execute commit
-            response = requests.post(commit_url, params=params)
+            response = requests.post(
+                commit_url, params=params, headers={"Content-Type": "application/json"}
+            )
 
             if response.status_code != 200:
                 raise SolrError(
                     f"Commit failed with status {response.status_code}: {response.text}"
                 )
 
-            return {
-                "status": "success",
-                "collection": collection,
-                "commit_type": "soft" if soft else "hard",
-                "committed": True,
-            }
+            # Parse and return raw Solr response
+            return response.json()
 
         except SolrError:
             raise
         except Exception as e:
-            raise SolrError(f"Failed to commit: {str(e)}")
+            raise SolrError(f"Failed to commit: {str(e)}") from e
 
     async def execute_query(
         self,
@@ -519,8 +528,10 @@ class SolrClient:
         highlight_fragsize: int = 100,
         highlight_method: str = "unified",
         stats_fields: list[str] | None = None,
+        facet: bool = False,
+        facet_field: list[str] | None = None,
     ) -> dict[str, Any]:
-        """Execute a standard Solr query with optional highlighting and stats.
+        """Execute a standard Solr query with optional highlighting, stats, and faceting.
 
         Args:
             collection: Collection to query
@@ -535,9 +546,11 @@ class SolrClient:
             highlight_fragsize: Size of each snippet
             highlight_method: Highlighting method (unified, original, fastVector)
             stats_fields: Fields to compute statistics for
+            facet: Enable faceting
+            facet_field: Fields to facet on
 
         Returns:
-            Query results with highlighting and stats if requested
+            Raw Solr response with highlighting, stats, and facets if requested
 
         Raises:
             QueryError: If query fails
@@ -576,6 +589,11 @@ class SolrClient:
                 params["stats"] = "true"
                 params["stats.field"] = stats_fields
 
+            # Add facet parameters
+            if facet and facet_field:
+                params["facet"] = "true"
+                params["facet.field"] = facet_field
+
             # Execute query
             response = requests.get(query_url, params=params)  # type: ignore[arg-type]
 
@@ -584,34 +602,13 @@ class SolrClient:
                     f"Query failed with status {response.status_code}: {response.text}"
                 )
 
-            result = response.json()
-
-            # Format response
-            formatted_result = {
-                "num_found": result["response"]["numFound"],
-                "docs": result["response"]["docs"],
-                "start": result["response"].get("start", start),
-                "query_info": {
-                    "q": q,
-                    "rows": rows,
-                    "collection": collection,
-                },
-            }
-
-            # Add highlighting if present
-            if "highlighting" in result:
-                formatted_result["highlighting"] = result["highlighting"]
-
-            # Add stats if present
-            if "stats" in result:
-                formatted_result["stats"] = result["stats"]["stats_fields"]
-
-            return formatted_result
+            # Return raw Solr response
+            return response.json()
 
         except QueryError:
             raise
         except Exception as e:
-            raise QueryError(f"Query execution failed: {str(e)}")
+            raise QueryError(f"Query execution failed: {str(e)}") from e
 
     async def get_terms(
         self,
@@ -669,30 +666,13 @@ class SolrClient:
                     f"Terms request failed with status {response.status_code}: {response.text}"
                 )
 
-            result = response.json()
-
-            # Parse terms response
-            # Solr returns terms as [term1, count1, term2, count2, ...]
-            terms_data = result.get("terms", {}).get(field, [])
-            terms_list = []
-
-            for i in range(0, len(terms_data), 2):
-                if i + 1 < len(terms_data):
-                    terms_list.append(
-                        {"term": terms_data[i], "frequency": terms_data[i + 1]}
-                    )
-
-            return {
-                "terms": terms_list,
-                "field": field,
-                "collection": collection,
-                "total_terms": len(terms_list),
-            }
+            # Return raw Solr response
+            return response.json()
 
         except SolrError:
             raise
         except Exception as e:
-            raise SolrError(f"Failed to get terms: {str(e)}")
+            raise SolrError(f"Failed to get terms: {str(e)}") from e
 
     async def add_schema_field(
         self,
@@ -754,16 +734,12 @@ class SolrClient:
                     f"Schema modification failed with status {response.status_code}: {response.text}"
                 )
 
-            return {
-                "status": "success",
-                "field": field_def,
-                "collection": collection,
-            }
+            return response.json()
 
         except SolrError:
             raise
         except Exception as e:
-            raise SolrError(f"Failed to add field: {str(e)}")
+            raise SolrError(f"Failed to add field: {str(e)}") from e
 
     async def get_schema_fields(self, collection: str) -> dict[str, Any]:
         """Get all fields from the schema.
@@ -801,7 +777,7 @@ class SolrClient:
         except SolrError:
             raise
         except Exception as e:
-            raise SolrError(f"Failed to get schema fields: {str(e)}")
+            raise SolrError(f"Failed to get schema fields: {str(e)}") from e
 
     async def get_schema_field(
         self, collection: str, field_name: str
@@ -841,7 +817,7 @@ class SolrClient:
         except SolrError:
             raise
         except Exception as e:
-            raise SolrError(f"Failed to get field: {str(e)}")
+            raise SolrError(f"Failed to get field: {str(e)}") from e
 
     async def delete_schema_field(
         self, collection: str, field_name: str
@@ -876,16 +852,12 @@ class SolrClient:
                     f"Schema modification failed with status {response.status_code}: {response.text}"
                 )
 
-            return {
-                "status": "success",
-                "field_name": field_name,
-                "collection": collection,
-            }
+            return response.json()
 
         except SolrError:
             raise
         except Exception as e:
-            raise SolrError(f"Failed to delete field: {str(e)}")
+            raise SolrError(f"Failed to delete field: {str(e)}") from e
 
     async def atomic_update(
         self,
@@ -964,31 +936,19 @@ class SolrClient:
                     f"Atomic update failed with status {response.status_code}: {error_text}"
                 )
 
-            result = response.json()
-
-            # Extract new version if available
-            new_version = None
-            if "responseHeader" in result and "rf" in result:
-                # Version might be in the response
-                new_version = result.get("_version_")
-
-            return {
-                "status": "success",
-                "doc_id": doc_id,
-                "collection": collection,
-                "version": new_version,
-                "updates_applied": len(updates),
-            }
+            # Parse and return raw Solr response
+            return response.json()
 
         except (SolrError, IndexingError):
             raise
         except Exception as e:
-            raise SolrError(f"Failed to perform atomic update: {str(e)}")
+            raise SolrError(f"Failed to perform atomic update: {str(e)}") from e
 
     async def realtime_get(
         self,
         collection: str,
-        doc_ids: list[str],
+        doc_ids: list[str] | None = None,
+        ids: list[str] | None = None,
         fl: str | None = None,
     ) -> dict[str, Any]:
         """Get documents in real-time, including uncommitted changes.
@@ -996,6 +956,7 @@ class SolrClient:
         Args:
             collection: Collection name
             doc_ids: List of document IDs
+            ids: Alias for doc_ids (for compatibility)
             fl: Optional comma-separated list of fields
 
         Returns:
@@ -1018,11 +979,16 @@ class SolrClient:
             # Build parameters
             params = {"wt": "json"}
 
+            # Handle ids alias
+            id_list = ids if ids is not None else doc_ids
+            if not id_list:
+                raise SolrError("Must provide doc_ids or ids parameter")
+
             # Add IDs
-            if len(doc_ids) == 1:
-                params["id"] = doc_ids[0]
+            if len(id_list) == 1:
+                params["id"] = id_list[0]
             else:
-                params["ids"] = ",".join(doc_ids)
+                params["ids"] = ",".join(id_list)
 
             # Add field list if specified
             if fl:
@@ -1036,25 +1002,10 @@ class SolrClient:
                     f"Real-time get failed with status {response.status_code}: {response.text}"
                 )
 
-            result = response.json()
-
-            # Handle single vs multiple docs
-            if "doc" in result:
-                # Single document
-                docs = [result["doc"]] if result["doc"] is not None else []
-            elif "response" in result:
-                # Multiple documents
-                docs = result["response"].get("docs", [])
-            else:
-                docs = []
-
-            return {
-                "docs": docs,
-                "num_found": len(docs),
-                "collection": collection,
-            }
+            # Parse and return raw Solr response
+            return response.json()
 
         except SolrError:
             raise
         except Exception as e:
-            raise SolrError(f"Failed to get documents: {str(e)}")
+            raise SolrError(f"Failed to get documents: {str(e)}") from e

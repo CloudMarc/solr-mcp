@@ -89,7 +89,7 @@ class TestSolrMCPServer:
         mock_mcp_instance = MagicMock()
         mock_fastmcp.return_value = mock_mcp_instance
 
-        server = SolrMCPServer()
+        SolrMCPServer()
 
         # Tool decorator should be called
         assert mock_mcp_instance.tool.called
@@ -235,7 +235,7 @@ class TestCreateStarletteApp:
         """Test Starlette app creation."""
         mock_server = MagicMock()
 
-        app = create_starlette_app(mock_server, debug=True)
+        create_starlette_app(mock_server, debug=True)
 
         mock_sse_transport.assert_called_once_with("/messages/")
         mock_starlette.assert_called_once()
@@ -254,7 +254,7 @@ class TestCreateStarletteApp:
         """Test Starlette app creation with default debug."""
         mock_server = MagicMock()
 
-        app = create_starlette_app(mock_server)
+        create_starlette_app(mock_server)
 
         call_kwargs = mock_starlette.call_args[1]
         assert call_kwargs["debug"] is False
@@ -272,16 +272,15 @@ class TestMain:
         mock_server_instance.mcp._mcp_server = MagicMock()
         mock_server_class.return_value = mock_server_instance
 
-        with patch.dict("os.environ", {}, clear=True):
-            with patch("uvicorn.run") as mock_uvicorn:
-                main()
+        with patch.dict("os.environ", {}, clear=True), patch("uvicorn.run"):
+            main()
 
-                # Check server was created with defaults
-                mock_server_class.assert_called_once()
-                call_kwargs = mock_server_class.call_args[1]
-                assert call_kwargs["mcp_port"] == 8081
-                assert call_kwargs["solr_base_url"] == "http://localhost:8983/solr"
-                assert call_kwargs["stdio"] is False
+            # Check server was created with defaults
+            mock_server_class.assert_called_once()
+            call_kwargs = mock_server_class.call_args[1]
+            assert call_kwargs["mcp_port"] == 8081
+            assert call_kwargs["solr_base_url"] == "http://localhost:8983/solr"
+            assert call_kwargs["stdio"] is False
 
     @patch("solr_mcp.server.SolrMCPServer")
     @patch(

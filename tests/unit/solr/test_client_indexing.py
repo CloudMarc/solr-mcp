@@ -30,9 +30,16 @@ def mock_collection_provider():
 @pytest.fixture
 def mock_pysolr_client():
     """Create a mock pysolr.Solr client."""
+    import json
+
     client = MagicMock()
-    client.add = MagicMock()
-    client.delete = MagicMock()
+    # pysolr methods return JSON strings
+    client.add = MagicMock(
+        return_value=json.dumps({"responseHeader": {"status": 0, "QTime": 10}})
+    )
+    client.delete = MagicMock(
+        return_value=json.dumps({"responseHeader": {"status": 0, "QTime": 5}})
+    )
     client.commit = MagicMock()
     return client
 
@@ -72,11 +79,9 @@ class TestAddDocuments:
             overwrite=True,
         )
 
-        # Verify response
-        assert result["status"] == "success"
-        assert result["collection"] == "test_collection"
-        assert result["num_documents"] == 2
-        assert result["committed"] is True
+        # Verify response (raw Solr format)
+        assert "responseHeader" in result
+        assert result["responseHeader"]["status"] == 0
 
     @pytest.mark.asyncio
     async def test_add_documents_no_commit(self, solr_client, mock_pysolr_client):
@@ -96,7 +101,9 @@ class TestAddDocuments:
             overwrite=True,
         )
 
-        assert result["committed"] is False
+        # Verify raw Solr response
+        assert "responseHeader" in result
+        assert result["responseHeader"]["status"] == 0
 
     @pytest.mark.asyncio
     async def test_add_documents_commit_within(self, solr_client, mock_pysolr_client):
@@ -117,7 +124,9 @@ class TestAddDocuments:
             overwrite=True,
         )
 
-        assert result["commit_within"] == 5000
+        # Verify raw Solr response
+        assert "responseHeader" in result
+        assert result["responseHeader"]["status"] == 0
 
     @pytest.mark.asyncio
     async def test_add_documents_no_overwrite(self, solr_client, mock_pysolr_client):
@@ -181,59 +190,81 @@ class TestDeleteDocuments:
     """Tests for delete_documents method."""
 
     @pytest.mark.asyncio
-    async def test_delete_by_ids(self, solr_client, mock_pysolr_client):
+    async def test_delete_by_ids(self, solr_client):
         """Test deleting documents by IDs."""
         ids = ["doc1", "doc2", "doc3"]
 
-        result = await solr_client.delete_documents(
-            collection="test_collection",
-            ids=ids,
-        )
+        with patch("requests.post") as mock_post:
+            mock_response = MagicMock()
+            mock_response.status_code = 200
+            mock_response.json.return_value = {"responseHeader": {"status": 0}}
+            mock_post.return_value = mock_response
 
-        mock_pysolr_client.delete.assert_called_once_with(
-            id=ids,
-            commit=True,
-        )
+            result = await solr_client.delete_documents(
+                collection="test_collection",
+                ids=ids,
+            )
 
-        assert result["status"] == "success"
-        assert result["collection"] == "test_collection"
-        assert result["num_affected"] == 3
-        assert result["delete_by"] == "id"
+            # Verify requests.post was called correctly
+            mock_post.assert_called_once()
+            call_args = mock_post.call_args
+            assert "test_collection/update" in call_args[0][0]
+            assert call_args[1]["json"] == {"delete": ids}
+
+            assert "responseHeader" in result
+            assert result["responseHeader"]["status"] == 0
 
     @pytest.mark.asyncio
-    async def test_delete_by_query(self, solr_client, mock_pysolr_client):
+    async def test_delete_by_query(self, solr_client):
         """Test deleting documents by query."""
         query = "status:archived"
 
-        result = await solr_client.delete_documents(
-            collection="test_collection",
-            query=query,
-        )
+        with patch("requests.post") as mock_post:
+            mock_response = MagicMock()
+            mock_response.status_code = 200
+            mock_response.json.return_value = {"responseHeader": {"status": 0}}
+            mock_post.return_value = mock_response
 
-        mock_pysolr_client.delete.assert_called_once_with(
-            q=query,
-            commit=True,
-        )
+            result = await solr_client.delete_documents(
+                collection="test_collection",
+                query=query,
+            )
 
-        assert result["status"] == "success"
-        assert result["num_affected"] == "unknown (query-based)"
-        assert result["delete_by"] == "query"
+            # Verify requests.post was called correctly
+            mock_post.assert_called_once()
+            call_args = mock_post.call_args
+            assert call_args[1]["json"] == {"delete": {"query": query}}
+
+            assert "responseHeader" in result
+            assert result["responseHeader"]["status"] == 0
 
     @pytest.mark.asyncio
-    async def test_delete_no_commit(self, solr_client, mock_pysolr_client):
+    async def test_delete_no_commit(self, solr_client):
         """Test deleting without immediate commit."""
-        result = await solr_client.delete_documents(
-            collection="test_collection",
-            ids=["doc1"],
-            commit=False,
-        )
+        with patch("requests.post") as mock_post:
+            mock_response = MagicMock()
+            mock_response.status_code = 200
+            mock_response.json.return_value = {"responseHeader": {"status": 0}}
+            mock_post.return_value = mock_response
 
-        mock_pysolr_client.delete.assert_called_once_with(
-            id=["doc1"],
-            commit=False,
-        )
+            result = await solr_client.delete_documents(
+                collection="test_collection",
+                ids=["doc1"],
+                commit=False,
+            )
 
-        assert result["committed"] is False
+            # Verify requests.post was called correctly
+            mock_post.assert_called_once()
+            call_args = mock_post.call_args
+            # When commit=False, we don't add commit to params
+            assert (
+                "commit" not in call_args[1]["params"]
+                or call_args[1]["params"]["commit"] == "false"
+            )
+
+            # Verify raw Solr response
+            assert "responseHeader" in result
+            assert result["responseHeader"]["status"] == 0
 
     @pytest.mark.asyncio
     async def test_delete_both_ids_and_query_error(self, solr_client):
@@ -271,15 +302,16 @@ class TestDeleteDocuments:
             )
 
     @pytest.mark.asyncio
-    async def test_delete_pysolr_error(self, solr_client, mock_pysolr_client):
-        """Test handling pysolr errors."""
-        mock_pysolr_client.delete.side_effect = Exception("Solr server error")
+    async def test_delete_pysolr_error(self, solr_client):
+        """Test handling requests errors."""
+        with patch("requests.post") as mock_post:
+            mock_post.side_effect = Exception("Network error")
 
-        with pytest.raises(IndexingError, match="Failed to delete documents"):
-            await solr_client.delete_documents(
-                collection="test_collection",
-                ids=["doc1"],
-            )
+            with pytest.raises(IndexingError, match="Failed to delete documents"):
+                await solr_client.delete_documents(
+                    collection="test_collection",
+                    ids=["doc1"],
+                )
 
 
 class TestCommit:
@@ -303,10 +335,8 @@ class TestCommit:
             assert "test_collection/update" in call_args[0][0]
             assert call_args[1]["params"]["commit"] == "true"
 
-            assert result["status"] == "success"
-            assert result["collection"] == "test_collection"
-            assert result["committed"] is True
-            assert result["commit_type"] == "hard"
+            assert "responseHeader" in result
+            assert result["responseHeader"]["status"] == 0
 
     @pytest.mark.asyncio
     async def test_commit_collection_not_found(

@@ -17,14 +17,14 @@ class VectorSearchResult(BaseModel):
 
     def __getitem__(self, key):
         """Make result subscriptable."""
-        if key == "docid":
-            return self.docid
-        elif key == "score":
-            return self.score
-        elif key == "distance":
-            return self.distance
-        elif key == "metadata":
-            return self.metadata
+        key_map = {
+            "docid": self.docid,
+            "score": self.score,
+            "distance": self.distance,
+            "metadata": self.metadata,
+        }
+        if key in key_map:
+            return key_map[key]
         raise KeyError(f"Invalid key: {key}")
 
 

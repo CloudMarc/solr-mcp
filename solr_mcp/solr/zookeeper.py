@@ -32,9 +32,9 @@ class ZooKeeperCollectionProvider(CollectionProvider):
                 raise ConnectionError("ZooKeeper /collections path does not exist")
 
         except ConnectionLoss as e:
-            raise ConnectionError(f"Failed to connect to ZooKeeper: {str(e)}")
+            raise ConnectionError(f"Failed to connect to ZooKeeper: {str(e)}") from e
         except Exception as e:
-            raise ConnectionError(f"Error connecting to ZooKeeper: {str(e)}")
+            raise ConnectionError(f"Error connecting to ZooKeeper: {str(e)}") from e
 
     def cleanup(self):
         """Clean up ZooKeeper connection."""
@@ -68,9 +68,9 @@ class ZooKeeperCollectionProvider(CollectionProvider):
         except NoNodeError:
             return []  # No collections exist yet
         except ConnectionLoss as e:
-            raise ConnectionError(f"Lost connection to ZooKeeper: {str(e)}")
+            raise ConnectionError(f"Lost connection to ZooKeeper: {str(e)}") from e
         except Exception as e:
-            raise ConnectionError(f"Error listing collections: {str(e)}")
+            raise ConnectionError(f"Error listing collections: {str(e)}") from e
 
     async def collection_exists(self, collection: str) -> bool:
         """Check if a collection exists in ZooKeeper.
@@ -94,6 +94,8 @@ class ZooKeeperCollectionProvider(CollectionProvider):
             return exists is not None
 
         except ConnectionLoss as e:
-            raise ConnectionError(f"Lost connection to ZooKeeper: {str(e)}")
+            raise ConnectionError(f"Lost connection to ZooKeeper: {str(e)}") from e
         except Exception as e:
-            raise ConnectionError(f"Error checking collection existence: {str(e)}")
+            raise ConnectionError(
+                f"Error checking collection existence: {str(e)}"
+            ) from e

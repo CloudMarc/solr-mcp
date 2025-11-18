@@ -67,7 +67,7 @@ class TestZooKeeperCollectionProvider:
             with pytest.raises(
                 ConnectionError, match="ZooKeeper /collections path does not exist"
             ):
-                provider = ZooKeeperCollectionProvider(["host1:2181"])
+                ZooKeeperCollectionProvider(["host1:2181"])
 
     def test_connect_error(self):
         """Test connection error."""
@@ -77,7 +77,7 @@ class TestZooKeeperCollectionProvider:
             mock_factory.return_value = mock_client
 
             with pytest.raises(ConnectionError, match="Failed to connect to ZooKeeper"):
-                provider = ZooKeeperCollectionProvider(["host1:2181"])
+                ZooKeeperCollectionProvider(["host1:2181"])
 
     @pytest.mark.asyncio
     async def test_list_collections_success(self):

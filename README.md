@@ -142,6 +142,25 @@ uv sync --extra test
 
 This project is licensed under the MIT License - see the LICENSE file for details.
 
+## Testing
+
+This project includes comprehensive test coverage:
+
+- **540+ automated tests** (unit, integration, and E2E)
+- **66%+ code coverage** with mypy type safety
+- **Full integration tests** with Docker-based Solr cluster
+- **MCP protocol compliance** tests
+
+See [docs/TESTING.md](docs/TESTING.md) for complete testing documentation, including:
+- Quick start guide: [docs/TESTING_QUICK_START.md](docs/TESTING_QUICK_START.md)
+- Integration testing: [docs/INTEGRATION_TESTING.md](docs/INTEGRATION_TESTING.md)
+- Claude Desktop testing: [docs/MCP_TESTING.md](docs/MCP_TESTING.md)
+
+To run all tests:
+```bash
+./scripts/run_full_integration_tests.sh
+```
+
 ## Contributing
 
 Contributions are welcome! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
