@@ -117,7 +117,9 @@ async def _solr_search(
         )
 
     # Execute query
-    response = await mcp.solr_client.execute_raw_query(collection=collection, params=params)
+    response = await mcp.solr_client.execute_raw_query(
+        collection=collection, params=params
+    )
 
     # Parse results
     docs = response.get("response", {}).get("docs", [])

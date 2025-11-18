@@ -135,7 +135,9 @@ async def _get_totals(mcp, collection: str) -> dict[str, int]:
         "wt": "json",
     }
 
-    response = await mcp.solr_client.execute_raw_query(collection=collection, params=params)
+    response = await mcp.solr_client.execute_raw_query(
+        collection=collection, params=params
+    )
     total_files = response.get("response", {}).get("numFound", 0)
 
     # Count Python files
@@ -145,7 +147,9 @@ async def _get_totals(mcp, collection: str) -> dict[str, int]:
         "wt": "json",
     }
 
-    response_py = await mcp.solr_client.execute_raw_query(collection=collection, params=params_py)
+    response_py = await mcp.solr_client.execute_raw_query(
+        collection=collection, params=params_py
+    )
     python_files = response_py.get("response", {}).get("numFound", 0)
 
     # Count files with embeddings
@@ -155,7 +159,9 @@ async def _get_totals(mcp, collection: str) -> dict[str, int]:
         "wt": "json",
     }
 
-    response_vec = await mcp.solr_client.execute_raw_query(collection=collection, params=params_vec)
+    response_vec = await mcp.solr_client.execute_raw_query(
+        collection=collection, params=params_vec
+    )
     files_with_embeddings = response_vec.get("response", {}).get("numFound", 0)
 
     return {
@@ -177,10 +183,14 @@ async def _get_category_stats(mcp, collection: str) -> dict[str, int]:
         "wt": "json",
     }
 
-    response = await mcp.solr_client.execute_raw_query(collection=collection, params=params)
+    response = await mcp.solr_client.execute_raw_query(
+        collection=collection, params=params
+    )
 
     # Parse facet results
-    facets = response.get("facet_counts", {}).get("facet_fields", {}).get("category_ss", [])
+    facets = (
+        response.get("facet_counts", {}).get("facet_fields", {}).get("category_ss", [])
+    )
 
     # Convert to dict
     category_counts = {}
@@ -204,7 +214,9 @@ async def _get_file_type_stats(mcp, collection: str) -> dict[str, int]:
         "wt": "json",
     }
 
-    response = await mcp.solr_client.execute_raw_query(collection=collection, params=params)
+    response = await mcp.solr_client.execute_raw_query(
+        collection=collection, params=params
+    )
 
     # Parse facet results
     facets = response.get("facet_counts", {}).get("facet_fields", {}).get("tags_ss", [])
@@ -231,7 +243,9 @@ async def _analyze_tech_debt(mcp, collection: str) -> dict[str, Any]:
             "wt": "json",
         }
 
-        response = await mcp.solr_client.execute_raw_query(collection=collection, params=params)
+        response = await mcp.solr_client.execute_raw_query(
+            collection=collection, params=params
+        )
         count = response.get("response", {}).get("numFound", 0)
         if count > 0:
             debt_items[marker] = count
@@ -270,7 +284,9 @@ async def _analyze_documentation(mcp, collection: str) -> dict[str, Any]:
     )
     files_with_docs = response_docs.get("response", {}).get("numFound", 0)
 
-    coverage_pct = (files_with_docs / files_with_code * 100) if files_with_code > 0 else 0
+    coverage_pct = (
+        (files_with_docs / files_with_code * 100) if files_with_code > 0 else 0
+    )
 
     return {
         "files_with_code": files_with_code,
