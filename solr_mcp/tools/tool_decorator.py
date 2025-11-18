@@ -1,10 +1,8 @@
 import functools
 import inspect
+from collections.abc import Callable
 from typing import (
     Any,
-    Callable,
-    Dict,
-    List,
     Literal,
     TypedDict,
     TypeVar,
@@ -12,6 +10,7 @@ from typing import (
     get_args,
     get_origin,
 )
+
 
 F = TypeVar("F", bound=Callable[..., Any])
 
@@ -42,12 +41,12 @@ def tool() -> Callable:
             """Wrap function call."""
             try:
                 return await func(*args, **kwargs)
-            except Exception as e:
+            except Exception:
                 # Re-raise the exception to be handled by the caller
                 raise
 
         # Set tool metadata
-        wrapper._is_tool = True
+        wrapper._is_tool = True  # type: ignore[attr-defined]
 
         # Convert execute_list_collections -> solr_list_collections
         # Convert execute_select_query -> solr_select
@@ -60,7 +59,7 @@ def tool() -> Callable:
                 name = name[:-6]  # Remove '_query'
             name = f"solr_{name}"
 
-        wrapper._tool_name = name
+        wrapper._tool_name = name  # type: ignore[attr-defined]
 
         return wrapper
 
@@ -70,7 +69,7 @@ def tool() -> Callable:
 class ToolSchema(TypedDict):
     name: str
     description: str
-    inputSchema: Dict[str, Any]
+    inputSchema: dict[str, Any]
 
 
 def get_schema(func: Callable) -> ToolSchema:
@@ -125,7 +124,7 @@ def get_schema(func: Callable) -> ToolSchema:
 
         is_optional = False
 
-        if origin is list or origin is List:
+        if origin is list or origin is list:
             item_type = args[0] if args else Any
             item_schema = type_map.get(item_type, {"type": "string"})
             param_schema = {"type": "array", "items": item_schema}
@@ -142,7 +141,7 @@ def get_schema(func: Callable) -> ToolSchema:
                     literal_args = get_args(non_none_type)
                     param_schema = {"type": "string", "enum": list(literal_args)}
                 else:
-                    param_schema = type_map.get(non_none_type, {"type": "string"})
+                    param_schema = type_map.get(non_none_type, {"type": "string"})  # type: ignore[assignment]
             else:
                 param_schema = {"type": "string"}
         elif origin is Literal:
@@ -150,7 +149,7 @@ def get_schema(func: Callable) -> ToolSchema:
             literal_args = args
             param_schema = {"type": "string", "enum": list(literal_args)}
         else:
-            param_schema = type_map.get(param_type, {"type": "string"})
+            param_schema = type_map.get(param_type, {"type": "string"})  # type: ignore[assignment]
 
         # docstring에서 Args 섹션 파싱
         param_description_lines = []
@@ -210,4 +209,4 @@ def get_schema(func: Callable) -> ToolSchema:
             "required": required,
         },
     }
-    return schema
+    return schema  # type: ignore[return-value]

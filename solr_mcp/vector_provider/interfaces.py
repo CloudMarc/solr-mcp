@@ -1,14 +1,13 @@
 """Interfaces for vector providers."""
 
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List, Optional
 
 
 class VectorProvider(ABC):
     """Interface for generating vectors for semantic search."""
 
     @abstractmethod
-    async def get_vector(self, text: str, model: Optional[str] = None) -> List[float]:
+    async def get_vector(self, text: str, model: str | None = None) -> list[float]:
         """Get vector for a single text.
 
         Args:
@@ -26,8 +25,8 @@ class VectorProvider(ABC):
 
     @abstractmethod
     async def get_vectors(
-        self, texts: List[str], model: Optional[str] = None
-    ) -> List[List[float]]:
+        self, texts: list[str], model: str | None = None
+    ) -> list[list[float]]:
         """Get vectors for multiple texts.
 
         Args:

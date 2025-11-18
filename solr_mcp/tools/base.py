@@ -1,13 +1,14 @@
 """Base tool definitions and decorators."""
 
+from collections.abc import Callable
 from functools import wraps
-from typing import Any, Callable, Dict, List, Optional, Union
+from typing import Any
 
 
 def tool(
-    name: Optional[str] = None,
-    description: Optional[str] = None,
-    parameters: Optional[Dict[str, Any]] = None,
+    name: str | None = None,
+    description: str | None = None,
+    parameters: dict[str, Any] | None = None,
 ) -> Callable:
     """Decorator to mark a function as an MCP tool.
 
@@ -19,19 +20,19 @@ def tool(
 
     def decorator(func: Callable) -> Callable:
         @wraps(func)
-        def wrapper(*args, **kwargs) -> List[Dict[str, str]]:
+        def wrapper(*args, **kwargs) -> list[dict[str, str]]:
             result = func(*args, **kwargs)
             if not isinstance(result, list):
                 result = [{"type": "text", "text": str(result)}]
             return result
 
         # Mark as tool
-        wrapper._is_tool = True
+        wrapper._is_tool = True  # type: ignore[attr-defined]
 
         # Set tool metadata
-        wrapper._tool_name = name or func.__name__
-        wrapper._tool_description = description or func.__doc__ or ""
-        wrapper._tool_parameters = parameters or {}
+        wrapper._tool_name = name or func.__name__  # type: ignore[attr-defined]
+        wrapper._tool_description = description or func.__doc__ or ""  # type: ignore[attr-defined]
+        wrapper._tool_parameters = parameters or {}  # type: ignore[attr-defined]
 
         return wrapper
 

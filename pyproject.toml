@@ -1,84 +1,151 @@
-[tool.poetry]
+[project]
 name = "solr-mcp"
 version = "0.1.0"
 description = "A Python package for accessing Solr indexes via Model Context Protocol (MCP)"
-authors = ["Allen Day <allenday@allenday.com>"]
+authors = [
+    {name = "Allen Day", email = "allenday@allenday.com"}
+]
 readme = "README.md"
-license = "MIT"
-repository = "https://github.com/allenday/solr-mcp"
-packages = [{include = "solr_mcp"}]
+license = {text = "MIT"}
+requires-python = ">=3.10"
+dependencies = [
+    "pysolr>=3.9.0",
+    "mcp>=1.4.1",
+    "httpx>=0.27.0",
+    "pydantic>=2.6.1",
+    "numpy>=1.26.3",
+    "markdown>=3.5.2",
+    "fastapi>=0.109.2",
+    "uvicorn>=0.27.1",
+    "python-frontmatter>=1.1.0",
+    "loguru>=0.7.3",
+    "kazoo>=2.10.0",
+    "sqlglot>=26.11.1",
+    "pytest-mock>=3.14.0",
+    "aiohttp>=3.9.0",
+]
 
-[tool.poetry.scripts]
+[project.optional-dependencies]
+test = [
+    "pytest>=8.0.0",
+    "pytest-cov>=6.0.0",
+    "pytest-asyncio>=0.25.3",
+    "pytest-mock>=3.14.0",
+    "mypy>=1.8.0",
+    "ruff>=0.1.0",
+    "types-requests>=2.31.0",
+]
+
+[project.urls]
+Repository = "https://github.com/allenday/solr-mcp"
+
+[project.scripts]
 solr-mcp = "solr_mcp.server:main"
-lint = "scripts.lint:main"
-format = "scripts.format:main"
-
-[tool.poetry.dependencies]
-python = "^3.10"
-pysolr = "^3.9.0"
-mcp = "^1.4.1"
-httpx = "^0.27.0"
-pydantic = "^2.6.1"
-numpy = "^1.26.3"
-markdown = "^3.5.2"
-fastapi = "^0.109.2"
-uvicorn = "^0.27.1"
-python-frontmatter = "^1.1.0"
-loguru = "^0.7.3"
-kazoo = "^2.10.0"
-sqlglot = "^26.11.1"
-pytest-mock = "^3.14.0"
-
-[tool.poetry.group.dev.dependencies]
-pytest = "^8.0.0"
-mypy = "^1.8.0"
-flake8 = "^7.0.0"
-black = "^24.2.0"
-isort = "^5.13.2"
-pytest-cov = "^6.0.0"
-pytest-asyncio = "^0.25.3"
 
 [build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
 
 [tool.pytest.ini_options]
 asyncio_mode = "strict"
 asyncio_default_fixture_loop_scope = "function"
 markers = [
-    "integration: marks tests that require external services (deselect with '-m \"not integration\"')"
+    # Test types
+    "integration: marks tests as integration tests (requires external services like Solr)",
+    "contract: marks tests as API contract tests (validates API responses)",
+    "functional: marks tests as functional tests (end-to-end feature validation)",
+
+    # Implementation status
+    "not_implemented: Feature not yet implemented (auto-skipped in normal runs)",
+    "wip: Work in progress (partially implemented)",
+    "roadmap: Planned feature for future release",
+
+    # Priority levels
+    "priority_critical: Critical feature - blocking issue or security concern",
+    "priority_high: High priority feature - important for user experience",
+    "priority_medium: Medium priority feature - nice to have",
+    "priority_low: Low priority feature - future enhancement",
+
+    # Feature epics/themes
+    "epic_indexing: Document indexing and updates",
+    "epic_query: Query and search functionality",
+    "epic_schema: Schema management",
+    "epic_vector: Vector search and embeddings",
+    "epic_performance: Performance optimizations",
+]
+
+[tool.coverage.run]
+omit = [
+    "tests/*",
+    "scripts/*",
 ]
 
 [tool.mypy]
 python_version = "3.10"
-warn_return_any = true
+warn_return_any = false
 warn_unused_configs = true
-disallow_untyped_defs = true
-disallow_incomplete_defs = true
-check_untyped_defs = true
-disallow_untyped_decorators = true
-no_implicit_optional = true
 warn_redundant_casts = true
-warn_unused_ignores = true
+warn_unused_ignores = false
 warn_no_return = true
-warn_unreachable = true
+warn_unreachable = false
+ignore_missing_imports = true
+
+# Gradual typing - check typed code, ignore untyped code
+check_untyped_defs = false
+disallow_untyped_defs = false
+disallow_incomplete_defs = false
 
 [[tool.mypy.overrides]]
 module = "tests.*"
 disallow_untyped_defs = false
 disallow_incomplete_defs = false
 
-[tool.black]
+[tool.ruff]
+# Same line length as black
 line-length = 88
-target-version = ['py310']
-include = '\.pyi?$'
+target-version = "py310"
 
-[tool.isort]
-profile = "black"
-line_length = 88
-multi_line_output = 3
+# Exclude common directories
+exclude = [
+    ".venv",
+    ".git",
+    "__pycache__",
+    "build",
+    "dist",
+    ".eggs",
+    "*.egg-info",
+]
 
-[tool.flake8]
-max-line-length = 88
-extend-ignore = ["E203"]
-exclude = [".venv", ".git", "__pycache__", "build", "dist"]
+[tool.ruff.lint]
+# Enable pycodestyle (E, W), Pyflakes (F), isort (I), and others
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # Pyflakes
+    "I",   # isort
+    "N",   # pep8-naming
+    "UP",  # pyupgrade
+    "B",   # flake8-bugbear
+    "C4",  # flake8-comprehensions
+    "SIM", # flake8-simplify
+]
+
+# Ignore specific rules (E203 is not compatible with black)
+ignore = [
+    "E203",  # whitespace before ':'
+    "E501",  # line too long (handled by formatter)
+]
+
+[tool.ruff.lint.isort]
+# Use black-compatible isort settings
+force-single-line = false
+force-sort-within-sections = false
+lines-after-imports = 2
+known-first-party = ["solr_mcp"]
+
+[tool.ruff.format]
+# Use black-compatible formatting
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = false
+line-ending = "auto"

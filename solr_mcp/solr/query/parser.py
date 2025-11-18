@@ -1,13 +1,10 @@
 """Query parser for Solr."""
 
 import logging
-from typing import List, Optional, Tuple
 
-from loguru import logger
-from sqlglot import ParseError, exp, parse_one
+from sqlglot import ParseError, parse_one
 from sqlglot.expressions import (
     Alias,
-    Binary,
     Column,
     From,
     Identifier,
@@ -15,10 +12,10 @@ from sqlglot.expressions import (
     Select,
     Star,
     Table,
-    Where,
 )
 
 from solr_mcp.solr.exceptions import QueryError
+
 
 logger = logging.getLogger(__name__)
 
@@ -43,7 +40,7 @@ class QueryParser:
                 parts[i] = f"{field} = '{value}'"
         return " ".join(parts)
 
-    def parse_select(self, query: str) -> Tuple[Select, str, List[str]]:
+    def parse_select(self, query: str) -> tuple[Select, str, list[str]]:
         """Parse a SELECT query.
 
         Args:
@@ -80,9 +77,9 @@ class QueryParser:
             if isinstance(from_expr, Table):
                 collection = from_expr.name
             elif isinstance(from_expr, From):
-                if isinstance(from_expr.this, Table):
-                    collection = from_expr.this.name
-                elif isinstance(from_expr.this, Identifier):
+                if isinstance(from_expr.this, Table) or isinstance(
+                    from_expr.this, Identifier
+                ):
                     collection = from_expr.this.name
                 elif hasattr(from_expr.this, "this") and isinstance(
                     from_expr.this.this, (Table, Identifier)
@@ -115,7 +112,7 @@ class QueryParser:
         except Exception as e:
             raise QueryError(f"Error parsing query: {str(e)}")
 
-    def get_sort_fields(self, ast: Select) -> List[Tuple[str, str]]:
+    def get_sort_fields(self, ast: Select) -> list[tuple[str, str]]:
         """Get sort fields from AST.
 
         Args:
@@ -138,7 +135,7 @@ class QueryParser:
 
         return sort_fields
 
-    def extract_sort_fields(self, sort_spec: str) -> List[str]:
+    def extract_sort_fields(self, sort_spec: str) -> list[str]:
         """Extract field names from a sort specification.
 
         Args:

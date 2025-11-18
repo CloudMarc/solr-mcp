@@ -1,6 +1,6 @@
 """Vector search results handling."""
 
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -10,8 +10,8 @@ class VectorSearchResult(BaseModel):
 
     docid: str = Field(description="Internal Solr document ID (_docid_)")
     score: float = Field(description="Search score")
-    distance: Optional[float] = Field(None, description="Vector distance if available")
-    metadata: Dict[str, Any] = Field(
+    distance: float | None = Field(None, description="Vector distance if available")
+    metadata: dict[str, Any] = Field(
         default_factory=dict, description="Additional metadata"
     )
 
@@ -31,23 +31,23 @@ class VectorSearchResult(BaseModel):
 class VectorSearchResults(BaseModel):
     """Container for vector search results."""
 
-    results: List[VectorSearchResult] = Field(
+    results: list[VectorSearchResult] = Field(
         default_factory=list, description="List of search results"
     )
     total_found: int = Field(0, description="Total number of results found")
     top_k: int = Field(..., description="Number of results requested")
-    query_time_ms: Optional[int] = Field(
+    query_time_ms: int | None = Field(
         None, description="Query execution time in milliseconds"
     )
 
     @property
-    def docs(self) -> List[VectorSearchResult]:
+    def docs(self) -> list[VectorSearchResult]:
         """Get list of search results."""
         return self.results
 
     @classmethod
     def from_solr_response(
-        cls, response: Dict[str, Any], top_k: int = 10
+        cls, response: dict[str, Any], top_k: int = 10
     ) -> "VectorSearchResults":
         """Create VectorSearchResults from Solr response.
 
@@ -97,7 +97,7 @@ class VectorSearchResults(BaseModel):
             query_time_ms=query_time,
         )
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert results to dictionary format.
 
         Returns:
@@ -112,7 +112,7 @@ class VectorSearchResults(BaseModel):
             },
         }
 
-    def get_doc_ids(self) -> List[str]:
+    def get_doc_ids(self) -> list[str]:
         """Get list of document IDs from results.
 
         Returns:
@@ -120,7 +120,7 @@ class VectorSearchResults(BaseModel):
         """
         return [result.docid for result in self.results]
 
-    def get_scores(self) -> List[float]:
+    def get_scores(self) -> list[float]:
         """Get list of scores from results.
 
         Returns:
@@ -128,7 +128,7 @@ class VectorSearchResults(BaseModel):
         """
         return [result.score for result in self.results]
 
-    def get_distances(self) -> List[Optional[float]]:
+    def get_distances(self) -> list[float | None]:
         """Get list of vector distances from results.
 
         Returns:

@@ -4,7 +4,7 @@ from unittest.mock import MagicMock, Mock, patch
 
 import pytest
 
-from solr_mcp.solr.constants import FIELD_TYPE_MAPPING, SYNTHETIC_SORT_FIELDS
+from solr_mcp.solr.constants import SYNTHETIC_SORT_FIELDS
 from solr_mcp.solr.exceptions import SchemaError
 from solr_mcp.solr.schema import FieldCache, FieldManager
 

@@ -16,6 +16,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Demo scripts and utilities for testing
 - Bitcoin whitepaper as sample document
 - Documentation (README, QUICKSTART, CONTRIBUTING)
+- **New Feature: Highlighting Support** - `solr_query` tool now supports highlighting matched terms with configurable snippets, fragment size, and methods (unified, original, fastVector)
+- **New Feature: Stats Component** - Compute statistical aggregations (min, max, mean, sum, stddev) on numeric fields via `solr_query` tool
+- **New Tool: solr_terms** - Explore indexed terms with prefix/regex filtering for autocomplete and vocabulary exploration
+- **New Tool: solr_schema_add_field** - Dynamically add new fields to collection schemas
+- **New Tool: solr_schema_list_fields** - List all fields in a collection schema with full details
+- **New Tool: solr_schema_get_field** - Get detailed information about a specific schema field
+- **New Tool: solr_schema_delete_field** - Remove fields from collection schemas
+- **New Client Methods**: `execute_query`, `get_terms`, `add_schema_field`, `get_schema_fields`, `get_schema_field`, `delete_schema_field`
+- Comprehensive test coverage for all new features (34 new tests, 503 total tests passing)
+- **New Feature: Phase 1 Advanced Indexing**
+  - **New Tool: solr_atomic_update** - Atomically update specific document fields without reindexing (supports set, inc, add, remove, removeregex operations)
+  - **New Tool: solr_realtime_get** - Retrieve documents in real-time, including uncommitted changes
+  - **Enhanced Tool: solr_commit** - Now supports soft commits (visibility without durability), hard commits (full durability), wait_searcher, and expunge_deletes options
+  - **Optimistic Concurrency Control** - Version-based locking using `_version_` field to prevent concurrent update conflicts
+  - **New Client Methods**: `atomic_update`, `realtime_get`, enhanced `commit` with soft/hard options
+  - Comprehensive test coverage for Phase 1 features (23 new tests, 526 total tests passing)
 
 ### Fixed
 - Improved search query transformation for better results

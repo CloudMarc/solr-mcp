@@ -64,11 +64,11 @@ def test_load_from_file():
 
 def test_load_invalid_json():
     """Test loading invalid JSON."""
-    with patch("builtins.open", mock_open(read_data="invalid json")):
-        with pytest.raises(
-            ConfigurationError, match="Invalid JSON in configuration file"
-        ):
-            SolrConfig.load("config.json")
+    with (
+        patch("builtins.open", mock_open(read_data="invalid json")),
+        pytest.raises(ConfigurationError, match="Invalid JSON in configuration file"),
+    ):
+        SolrConfig.load("config.json")
 
 
 def test_load_missing_required_field():

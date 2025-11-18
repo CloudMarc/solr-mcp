@@ -1,17 +1,16 @@
 """Vector search functionality for SolrCloud client."""
 
 import logging
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
+from typing import TYPE_CHECKING, Any
 
-import numpy as np
 import pysolr
-from loguru import logger
 
 from solr_mcp.solr.interfaces import VectorSearchProvider
 from solr_mcp.vector_provider import OllamaVectorProvider
 from solr_mcp.vector_provider.constants import MODEL_DIMENSIONS
 
 from ..exceptions import SchemaError, SolrError
+
 
 if TYPE_CHECKING:
     from ..client import SolrClient
@@ -25,7 +24,7 @@ class VectorManager(VectorSearchProvider):
     def __init__(
         self,
         solr_client: "SolrClient",
-        client: Optional[OllamaVectorProvider] = None,
+        client: OllamaVectorProvider | None = None,
         default_top_k: int = 10,
     ):
         """Initialize VectorManager.
@@ -40,8 +39,8 @@ class VectorManager(VectorSearchProvider):
         self.default_top_k = default_top_k
 
     async def get_vector(
-        self, text: str, vector_provider_config: Optional[Dict[str, Any]] = None
-    ) -> List[float]:
+        self, text: str, vector_provider_config: dict[str, Any] | None = None
+    ) -> list[float]:
         """Get vector vector for text.
 
         Args:
@@ -78,10 +77,10 @@ class VectorManager(VectorSearchProvider):
                 from solr_mcp.vector_provider import OllamaVectorProvider
 
                 temp_client = OllamaVectorProvider(
-                    model=temp_config["model"],
-                    base_url=temp_config["base_url"],
-                    timeout=temp_config["timeout"],
-                    retries=temp_config["retries"],
+                    model=temp_config["model"],  # type: ignore[arg-type]
+                    base_url=temp_config["base_url"],  # type: ignore[arg-type]
+                    timeout=temp_config["timeout"],  # type: ignore[arg-type]
+                    retries=temp_config["retries"],  # type: ignore[arg-type]
                 )
 
                 # Use temporary client to get vector
@@ -100,7 +99,7 @@ class VectorManager(VectorSearchProvider):
             raise SolrError(f"Error getting vector: {str(e)}")
 
     def format_knn_query(
-        self, vector: List[float], field: str, top_k: Optional[int] = None
+        self, vector: list[float], field: str, top_k: int | None = None
     ) -> str:
         """Format KNN query for Solr.
 
@@ -144,9 +143,9 @@ class VectorManager(VectorSearchProvider):
     async def validate_vector_field(
         self,
         collection: str,
-        field: Optional[str],
-        vector_provider_model: Optional[str] = None,
-    ) -> Tuple[str, Dict[str, Any]]:
+        field: str | None,
+        vector_provider_model: str | None = None,
+    ) -> tuple[str, dict[str, Any]]:
         """Validate vector field and auto-detect if not provided.
 
         Args:
@@ -181,14 +180,14 @@ class VectorManager(VectorSearchProvider):
                 raise SolrError(str(e))
             raise SolrError(f"Failed to validate vector field: {str(e)}")
 
-    async def execute_vector_search(
+    async def execute_vector_search(  # type: ignore[override]
         self,
         client: pysolr.Solr,
-        vector: List[float],
+        vector: list[float],
         field: str,
-        top_k: Optional[int] = None,
-        filter_query: Optional[str] = None,
-    ) -> Dict[str, Any]:
+        top_k: int | None = None,
+        filter_query: str | None = None,
+    ) -> dict[str, Any]:
         """Execute vector similarity search.
 
         Args:
@@ -228,7 +227,7 @@ class VectorManager(VectorSearchProvider):
         except Exception as e:
             raise SolrError(f"Vector search failed: {str(e)}")
 
-    def extract_doc_ids(self, results: Dict[str, Any]) -> List[str]:
+    def extract_doc_ids(self, results: dict[str, Any]) -> list[str]:
         """Extract document IDs from search results.
 
         Args:

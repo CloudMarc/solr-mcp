@@ -11,6 +11,7 @@ from solr_mcp.solr.exceptions import (
     SolrError,
 )
 
+
 __all__ = [
     "SolrConfig",
     "SolrClient",

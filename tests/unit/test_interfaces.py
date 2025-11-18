@@ -1,7 +1,7 @@
 """Unit tests for Solr client interfaces."""
 
 from abc import ABC
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 import pytest
 
@@ -21,7 +21,10 @@ def test_collection_provider_cannot_instantiate():
     """Test that CollectionProvider cannot be instantiated directly."""
     with pytest.raises(TypeError) as exc_info:
         CollectionProvider()
-    assert "abstract methods collection_exists, list_collections" in str(exc_info.value)
+    error_msg = str(exc_info.value)
+    assert "abstract" in error_msg.lower()
+    assert "collection_exists" in error_msg
+    assert "list_collections" in error_msg
 
 
 def test_collection_provider_requires_methods():
@@ -32,7 +35,10 @@ def test_collection_provider_requires_methods():
 
     with pytest.raises(TypeError) as exc_info:
         IncompleteProvider()
-    assert "abstract methods collection_exists, list_collections" in str(exc_info.value)
+    error_msg = str(exc_info.value)
+    assert "abstract" in error_msg.lower()
+    assert "collection_exists" in error_msg
+    assert "list_collections" in error_msg
 
 
 @pytest.mark.asyncio
@@ -40,7 +46,7 @@ async def test_collection_provider_implementation():
     """Test that a complete implementation can be instantiated."""
 
     class ValidProvider(CollectionProvider):
-        async def list_collections(self) -> List[str]:
+        async def list_collections(self) -> list[str]:
             return ["collection1"]
 
         async def collection_exists(self, collection: str) -> bool:
@@ -79,18 +85,18 @@ def test_vector_search_provider_requires_all_methods():
         def execute_vector_search(
             self,
             client: Any,
-            vector: List[float],
+            vector: list[float],
             field: str,
-            top_k: Optional[int] = None,
-        ) -> Dict[str, Any]:
+            top_k: int | None = None,
+        ) -> dict[str, Any]:
             return {"response": {"docs": []}}
 
     with pytest.raises(TypeError) as exc_info:
         IncompleteProvider()
-    assert (
-        "Can't instantiate abstract class IncompleteProvider with abstract method get_vector"
-        == str(exc_info.value)
-    )
+    # Python 3.13+ uses different error message format
+    error_msg = str(exc_info.value)
+    assert "Can't instantiate abstract class IncompleteProvider" in error_msg
+    assert "get_vector" in error_msg
 
 
 def test_vector_search_provider_implementation():
@@ -100,13 +106,13 @@ def test_vector_search_provider_implementation():
         def execute_vector_search(
             self,
             client: Any,
-            vector: List[float],
+            vector: list[float],
             field: str,
-            top_k: Optional[int] = None,
-        ) -> Dict[str, Any]:
+            top_k: int | None = None,
+        ) -> dict[str, Any]:
             return {"response": {"docs": []}}
 
-        async def get_vector(self, text: str) -> List[float]:
+        async def get_vector(self, text: str) -> list[float]:
             return [0.1, 0.2, 0.3]
 
     provider = ValidProvider()
@@ -124,13 +130,13 @@ async def test_vector_search_provider_async_method():
         def execute_vector_search(
             self,
             client: Any,
-            vector: List[float],
+            vector: list[float],
             field: str,
-            top_k: Optional[int] = None,
-        ) -> Dict[str, Any]:
+            top_k: int | None = None,
+        ) -> dict[str, Any]:
             return {"response": {"docs": []}}
 
-        async def get_vector(self, text: str) -> List[float]:
+        async def get_vector(self, text: str) -> list[float]:
             return [0.1, 0.2, 0.3]
 
     provider = ValidProvider()

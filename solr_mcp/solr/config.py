@@ -2,13 +2,13 @@
 
 import json
 import logging
-from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 import pydantic
 from pydantic import BaseModel, Field, field_validator, model_validator
 
 from solr_mcp.solr.exceptions import ConfigurationError
+
 
 logger = logging.getLogger(__name__)
 
@@ -17,7 +17,7 @@ class SolrConfig(BaseModel):
     """Configuration for Solr client."""
 
     solr_base_url: str = Field(description="Base URL for Solr instance")
-    zookeeper_hosts: List[str] = Field(description="List of ZooKeeper hosts")
+    zookeeper_hosts: list[str] = Field(description="List of ZooKeeper hosts")
     connection_timeout: int = Field(
         default=10, gt=0, description="Connection timeout in seconds"
     )
@@ -51,7 +51,7 @@ class SolrConfig(BaseModel):
         return v
 
     @field_validator("zookeeper_hosts")
-    def validate_zookeeper_hosts(cls, v: List[str]) -> List[str]:
+    def validate_zookeeper_hosts(cls, v: list[str]) -> list[str]:
         """Validate ZooKeeper hosts."""
         if not v:
             raise ConfigurationError("zookeeper_hosts is required")
@@ -123,7 +123,7 @@ class SolrConfig(BaseModel):
                 raise
             raise ConfigurationError(f"Failed to load config: {str(e)}")
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert config to dictionary."""
         return self.model_dump()
 

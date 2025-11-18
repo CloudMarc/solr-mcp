@@ -1,7 +1,7 @@
 """Tests for solr_mcp.solr.utils.formatting module."""
 
 import json
-from unittest.mock import Mock, patch
+from unittest.mock import Mock
 
 import pytest
 from pysolr import Results

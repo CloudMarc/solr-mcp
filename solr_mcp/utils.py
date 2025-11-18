@@ -1,7 +1,8 @@
 """Utility functions for Solr MCP."""
 
 import json
-from typing import Any, Dict, List, Optional, Union
+from typing import Any
+
 
 # Map Solr field types to our simplified type system
 FIELD_TYPE_MAPPING = {
@@ -37,7 +38,7 @@ class SolrUtils:
     """Utility functions for Solr operations."""
 
     @staticmethod
-    def ensure_json_object(value: Union[str, Dict, List, Any]) -> Any:
+    def ensure_json_object(value: str | dict | list | Any) -> Any:
         """Ensure value is a JSON object if it's a JSON string.
 
         Args:
@@ -55,8 +56,8 @@ class SolrUtils:
 
     @staticmethod
     def sanitize_filters(
-        filters: Optional[Union[str, List[str], Dict[str, Any]]]
-    ) -> Optional[List[str]]:
+        filters: str | list[str] | dict[str, Any] | None,
+    ) -> list[str] | None:
         """Sanitize and normalize filter queries.
 
         Args:
@@ -99,8 +100,8 @@ class SolrUtils:
 
     @staticmethod
     def sanitize_sort(
-        sort: Optional[str], sortable_fields: Dict[str, Dict[str, Any]]
-    ) -> Optional[str]:
+        sort: str | None, sortable_fields: dict[str, dict[str, Any]]
+    ) -> str | None:
         """Sanitize and normalize sort parameter.
 
         Args:
@@ -148,8 +149,8 @@ class SolrUtils:
 
     @staticmethod
     def sanitize_fields(
-        fields: Optional[Union[str, List[str], Dict[str, Any]]]
-    ) -> Optional[List[str]]:
+        fields: str | list[str] | dict[str, Any] | None,
+    ) -> list[str] | None:
         """Sanitize and normalize field list.
 
         Args:
@@ -190,7 +191,7 @@ class SolrUtils:
         return sanitized if sanitized else None
 
     @staticmethod
-    def sanitize_facets(facets: Union[str, Dict, Any]) -> Dict:
+    def sanitize_facets(facets: str | dict | Any) -> dict:
         """Sanitize facet results.
 
         Args:
@@ -213,7 +214,7 @@ class SolrUtils:
             if isinstance(value, dict):
                 sanitized[key] = SolrUtils.sanitize_facets(value)
             elif isinstance(value, (list, tuple)):
-                sanitized[key] = [
+                sanitized[key] = [  # type: ignore[assignment]
                     SolrUtils.ensure_json_object(v) if isinstance(v, str) else v
                     for v in value
                 ]
@@ -223,7 +224,7 @@ class SolrUtils:
         return sanitized
 
     @staticmethod
-    def sanitize_highlighting(highlighting: Union[str, Dict, Any]) -> Dict:
+    def sanitize_highlighting(highlighting: str | dict | Any) -> dict:
         """Sanitize highlighting results.
 
         Args:

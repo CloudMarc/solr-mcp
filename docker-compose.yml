@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   zookeeper:
     image: zookeeper:3.9
@@ -63,7 +61,7 @@ services:
 
   # Initializer service to set up Solr collections (runs once and exits)
   solr-init:
-    image: solr:9.5
+    image: solr:9.9.0
     container_name: solr-init
     depends_on:
       solr1:
@@ -150,6 +148,7 @@ services:
       - solr-net
     volumes:
       - ./:/app
+    command: ["python", "-m", "solr_mcp.server"]
 
 networks:
   solr-net:

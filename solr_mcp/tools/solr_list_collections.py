@@ -1,12 +1,10 @@
 """Tool for listing Solr collections."""
 
-from typing import Dict, List
-
 from solr_mcp.tools.tool_decorator import tool
 
 
 @tool()
-async def execute_list_collections(mcp) -> List[str]:
+async def execute_list_collections(mcp) -> list[str]:
     """List all available Solr collections.
 
     Lists all collections available in the Solr cluster.

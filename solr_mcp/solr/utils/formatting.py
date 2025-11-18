@@ -2,11 +2,12 @@
 
 import json
 import logging
-from typing import Any, Dict, List, Optional, Union
+from typing import Any
 
 import pysolr
 
 from solr_mcp.solr.exceptions import QueryError, SolrError
+
 
 logger = logging.getLogger(__name__)
 
@@ -78,7 +79,7 @@ def format_search_results(
         return json.dumps({"error": str(e)})
 
 
-def format_sql_response(raw_response: Dict[str, Any]) -> Dict[str, Any]:
+def format_sql_response(raw_response: dict[str, Any]) -> dict[str, Any]:
     """Format SQL query response to a standardized structure."""
     try:
         # Check for error response

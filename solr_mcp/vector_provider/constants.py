@@ -1,9 +1,10 @@
 """Constants for vector module."""
 
-from typing import Any, Dict
+from typing import Any
+
 
 # Default configuration for vector providers
-DEFAULT_OLLAMA_CONFIG: Dict[str, Any] = {
+DEFAULT_OLLAMA_CONFIG: dict[str, Any] = {
     "base_url": "http://localhost:11434",
     "model": "nomic-embed-text",
     "timeout": 30,  # seconds

@@ -1,12 +1,12 @@
 """Unit tests for FieldCache."""
 
 import time
-from unittest.mock import patch
 
 import pytest
 
 from solr_mcp.solr.constants import SYNTHETIC_SORT_FIELDS
 from solr_mcp.solr.schema.cache import FieldCache
+
 
 # Sample data for testing
 SAMPLE_FIELD_INFO = {

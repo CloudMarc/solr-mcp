@@ -9,7 +9,6 @@ from solr_mcp.solr.client import SolrClient
 from solr_mcp.solr.exceptions import ConnectionError, QueryError, SolrError
 from solr_mcp.solr.interfaces import CollectionProvider
 from solr_mcp.solr.query import QueryBuilder
-from solr_mcp.solr.schema import FieldManager
 
 from .common import MOCK_RESPONSES
 

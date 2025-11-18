@@ -139,6 +139,98 @@ class TestZooKeeperCollectionProvider:
 
             mock_client.get_children.assert_called_once_with("/collections")
 
+    @pytest.mark.asyncio
+    async def test_list_collections_no_node(self):
+        """Test listing collections when /collections node doesn't exist."""
+        with patch("solr_mcp.solr.zookeeper.KazooClient") as mock_factory:
+            mock_client = MagicMock()
+            mock_client.exists.return_value = True
+            mock_client.get_children.side_effect = NoNodeError("No node")
+            mock_factory.return_value = mock_client
+
+            provider = ZooKeeperCollectionProvider(["localhost:2181"])
+            collections = await provider.list_collections()
+
+            assert collections == []  # Should return empty list
+            mock_client.get_children.assert_called_once_with("/collections")
+
+    @pytest.mark.asyncio
+    async def test_collection_exists_true(self):
+        """Test checking if collection exists (true case)."""
+        with patch("solr_mcp.solr.zookeeper.KazooClient") as mock_factory:
+            mock_client = MagicMock()
+            mock_client.exists.side_effect = [
+                True,
+                MagicMock(),
+            ]  # First for /collections, second for collection path
+            mock_factory.return_value = mock_client
+
+            provider = ZooKeeperCollectionProvider(["localhost:2181"])
+            exists = await provider.collection_exists("test_collection")
+
+            assert exists is True
+            # Check that exists was called with the collection path (second call)
+            assert mock_client.exists.call_count == 2
+
+    @pytest.mark.asyncio
+    async def test_collection_exists_false(self):
+        """Test checking if collection exists (false case)."""
+        with patch("solr_mcp.solr.zookeeper.KazooClient") as mock_factory:
+            mock_client = MagicMock()
+            mock_client.exists.side_effect = [
+                True,
+                None,
+            ]  # First for /collections, second for collection path
+            mock_factory.return_value = mock_client
+
+            provider = ZooKeeperCollectionProvider(["localhost:2181"])
+            exists = await provider.collection_exists("test_collection")
+
+            assert exists is False
+            assert mock_client.exists.call_count == 2
+
+    @pytest.mark.asyncio
+    async def test_collection_exists_not_connected(self):
+        """Test checking collection existence when not connected."""
+        with patch("solr_mcp.solr.zookeeper.KazooClient") as mock_factory:
+            mock_client = MagicMock()
+            mock_client.exists.return_value = True
+            mock_factory.return_value = mock_client
+
+            provider = ZooKeeperCollectionProvider(["localhost:2181"])
+            provider.cleanup()  # Force disconnect
+
+            with pytest.raises(ConnectionError, match="Not connected to ZooKeeper"):
+                await provider.collection_exists("test_collection")
+
+    @pytest.mark.asyncio
+    async def test_collection_exists_connection_loss(self):
+        """Test connection loss during collection existence check."""
+        with patch("solr_mcp.solr.zookeeper.KazooClient") as mock_factory:
+            mock_client = MagicMock()
+            mock_client.exists.side_effect = [True, ConnectionLoss("ZooKeeper error")]
+            mock_factory.return_value = mock_client
+
+            provider = ZooKeeperCollectionProvider(["localhost:2181"])
+
+            with pytest.raises(ConnectionError, match="Lost connection to ZooKeeper"):
+                await provider.collection_exists("test_collection")
+
+    @pytest.mark.asyncio
+    async def test_collection_exists_generic_error(self):
+        """Test generic error during collection existence check."""
+        with patch("solr_mcp.solr.zookeeper.KazooClient") as mock_factory:
+            mock_client = MagicMock()
+            mock_client.exists.side_effect = [True, Exception("Generic error")]
+            mock_factory.return_value = mock_client
+
+            provider = ZooKeeperCollectionProvider(["localhost:2181"])
+
+            with pytest.raises(
+                ConnectionError, match="Error checking collection existence"
+            ):
+                await provider.collection_exists("test_collection")
+
     def test_cleanup(self):
         """Test cleanup."""
         with patch("solr_mcp.solr.zookeeper.KazooClient") as mock_factory:

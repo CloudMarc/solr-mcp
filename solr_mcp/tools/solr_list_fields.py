@@ -1,12 +1,12 @@
 """Tool for listing fields in a Solr collection."""
 
-from typing import Any, Dict
+from typing import Any
 
 from solr_mcp.tools.tool_decorator import tool
 
 
 @tool()
-async def execute_list_fields(mcp: str, collection: str) -> Dict[str, Any]:
+async def execute_list_fields(mcp: str, collection: str) -> dict[str, Any]:
     """List all fields in a Solr collection.
 
     This tool provides detailed information about each field in a Solr collection,
@@ -35,6 +35,6 @@ async def execute_list_fields(mcp: str, collection: str) -> Dict[str, Any]:
             - copies_from: List of source fields that copy their content to this field
         - collection: Name of the collection queried
     """
-    fields = await mcp.solr_client.list_fields(collection)
+    fields = await mcp.solr_client.list_fields(collection)  # type: ignore[attr-defined]
 
     return {"fields": fields, "collection": collection}

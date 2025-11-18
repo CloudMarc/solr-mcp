@@ -2,11 +2,10 @@
 
 import logging
 import time
-from typing import Any, Dict, List, Optional
-
-from loguru import logger
+from typing import Any
 
 from solr_mcp.solr.constants import SYNTHETIC_SORT_FIELDS
+
 
 logger = logging.getLogger(__name__)
 
@@ -16,9 +15,9 @@ class FieldCache:
 
     def __init__(self):
         """Initialize the FieldCache."""
-        self._cache: Dict[str, Dict[str, Any]] = {}
+        self._cache: dict[str, dict[str, Any]] = {}
 
-    def get(self, collection: str) -> Optional[Dict[str, Any]]:
+    def get(self, collection: str) -> dict[str, Any] | None:
         """Get cached field information for a collection.
 
         Args:
@@ -31,7 +30,7 @@ class FieldCache:
             return self._cache[collection]
         return None
 
-    def set(self, collection: str, field_info: Dict[str, Any]) -> None:
+    def set(self, collection: str, field_info: dict[str, Any]) -> None:
         """Cache field information for a collection.
 
         Args:
@@ -56,7 +55,7 @@ class FieldCache:
         last_updated = self._cache[collection].get("last_updated", 0)
         return (time.time() - last_updated) > max_age
 
-    def get_or_default(self, collection: str) -> Dict[str, Any]:
+    def get_or_default(self, collection: str) -> dict[str, Any]:
         """Get cached field information or return defaults.
 
         Args:
@@ -75,7 +74,7 @@ class FieldCache:
             "last_updated": time.time(),
         }
 
-    def clear(self, collection: Optional[str] = None) -> None:
+    def clear(self, collection: str | None = None) -> None:
         """Clear cached field information.
 
         Args:
@@ -86,7 +85,7 @@ class FieldCache:
         else:
             self._cache.clear()
 
-    def update(self, collection: str, field_info: Dict[str, Any]) -> None:
+    def update(self, collection: str, field_info: dict[str, Any]) -> None:
         """Update cached field information.
 
         Args:

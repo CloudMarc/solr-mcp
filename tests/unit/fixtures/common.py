@@ -1,11 +1,9 @@
 """Common fixtures and mock data for unit tests."""
 
-from typing import List, Optional
-from unittest.mock import Mock
-
 import pytest
 
 from solr_mcp.solr.interfaces import CollectionProvider, VectorSearchProvider
+
 
 # Mock response data with various levels of detail
 MOCK_RESPONSES = {
@@ -84,7 +82,7 @@ class MockCollectionProvider(CollectionProvider):
             collections if collections is not None else MOCK_RESPONSES["collections"]
         )
 
-    async def list_collections(self) -> List[str]:
+    async def list_collections(self) -> list[str]:
         """Return mock list of collections."""
         return self.collections
 
@@ -110,7 +108,7 @@ class MockVectorProvider(VectorSearchProvider):
             }
         }
 
-    async def get_vector(self, text: str, model: Optional[str] = None) -> List[float]:
+    async def get_vector(self, text: str, model: str | None = None) -> list[float]:
         """Mock text to vector conversion."""
         return [0.1, 0.2, 0.3]
 

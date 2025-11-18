@@ -1,13 +1,22 @@
 """Test tools initialization."""
 
-import pytest
-
 from solr_mcp.tools import (
     TOOLS_DEFINITION,
+    execute_add_documents,
+    execute_atomic_update,
+    execute_commit,
+    execute_delete_documents,
     execute_list_collections,
     execute_list_fields,
+    execute_query,
+    execute_realtime_get,
+    execute_schema_add_field,
+    execute_schema_delete_field,
+    execute_schema_get_field,
+    execute_schema_list_fields,
     execute_select_query,
     execute_semantic_select_query,
+    execute_terms,
     execute_vector_select_query,
     get_default_text_vectorizer,
 )
@@ -22,7 +31,18 @@ def test_tools_definition():
         "solr_select": execute_select_query,
         "solr_vector_select": execute_vector_select_query,
         "solr_semantic_select": execute_semantic_select_query,
+        "solr_query": execute_query,
+        "solr_terms": execute_terms,
+        "solr_atomic_update": execute_atomic_update,
+        "solr_realtime_get": execute_realtime_get,
+        "solr_schema_add_field": execute_schema_add_field,
+        "solr_schema_list_fields": execute_schema_list_fields,
+        "solr_schema_get_field": execute_schema_get_field,
+        "solr_schema_delete_field": execute_schema_delete_field,
         "get_default_text_vectorizer": get_default_text_vectorizer,
+        "solr_add_documents": execute_add_documents,
+        "solr_delete_documents": execute_delete_documents,
+        "solr_commit": execute_commit,
     }
 
     assert len(TOOLS_DEFINITION) == len(tools)
@@ -41,7 +61,18 @@ def test_tools_exports():
         "execute_select_query",
         "execute_vector_select_query",
         "execute_semantic_select_query",
+        "execute_query",
+        "execute_terms",
+        "execute_atomic_update",
+        "execute_realtime_get",
+        "execute_schema_add_field",
+        "execute_schema_list_fields",
+        "execute_schema_get_field",
+        "execute_schema_delete_field",
         "get_default_text_vectorizer",
+        "execute_add_documents",
+        "execute_delete_documents",
+        "execute_commit",
     }
 
     assert set(__all__) == expected
